@@ -223,10 +223,12 @@
         try { navigator.clipboard.writeText(query).catch(() => {}); } catch (e) {}
       }
 
-      // Native form POST to Google Lens v3 upload endpoint (same as Chrome search bar)
+      // Native form POST to Google Lens v3 upload endpoint with query & multisearch mode
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = 'https://lens.google.com/v3/upload';
+      form.action = query
+        ? 'https://lens.google.com/v3/upload?q=' + encodeURIComponent(query) + '&lns_mode=mu&ep=subb'
+        : 'https://lens.google.com/v3/upload?ep=subb';
       form.enctype = 'multipart/form-data';
       form.style.display = 'none';
 
@@ -240,12 +242,24 @@
       form.appendChild(fileInput);
 
       if (query) {
-        const textInput = document.createElement('input');
-        textInput.type = 'hidden';
-        textInput.name = 'ep';
-        textInput.value = 'subb';
-        form.appendChild(textInput);
+        const qInput = document.createElement('input');
+        qInput.type = 'hidden';
+        qInput.name = 'q';
+        qInput.value = query;
+        form.appendChild(qInput);
+
+        const modeInput = document.createElement('input');
+        modeInput.type = 'hidden';
+        modeInput.name = 'lns_mode';
+        modeInput.value = 'mu';
+        form.appendChild(modeInput);
       }
+
+      const epInput = document.createElement('input');
+      epInput.type = 'hidden';
+      epInput.name = 'ep';
+      epInput.value = 'subb';
+      form.appendChild(epInput);
 
       document.body.appendChild(form);
       form.submit();
@@ -351,26 +365,31 @@
         } else {
           const ico = document.createElement('span');
           ico.className = 'file-chip-icon';
-          ico.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>';
+          ico.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>';
           chip.appendChild(ico);
         }
+
+        const info = document.createElement('div');
+        info.className = 'file-chip-info';
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'file-chip-name';
         nameSpan.textContent = file.name;
-        chip.appendChild(nameSpan);
+        info.appendChild(nameSpan);
 
         const sizeSpan = document.createElement('span');
         sizeSpan.className = 'file-chip-size';
         sizeSpan.textContent = formatBytes(file.size);
-        chip.appendChild(sizeSpan);
+        info.appendChild(sizeSpan);
+
+        chip.appendChild(info);
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'file-chip-remove';
         removeBtn.title = 'Remove';
         removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
-        removeBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+        removeBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           attachedFiles.splice(index, 1);
@@ -407,23 +426,49 @@
       }
     });
 
-    // 3. Global drag & drop prevention so dragging files into Chrome does not navigate away
+    // 3. Global drag & drop prevention and vicinity detection around search bar
     window.addEventListener('dragenter', (e) => {
       e.preventDefault();
     });
+
     window.addEventListener('dragover', (e) => {
       e.preventDefault();
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-    });
-    window.addEventListener('drop', (e) => {
-      e.preventDefault();
+
+      const rect = composer.getBoundingClientRect();
+      const margin = 180;
+      const inVicinity = (
+        e.clientX >= rect.left - margin &&
+        e.clientX <= rect.right + margin &&
+        e.clientY >= rect.top - margin &&
+        e.clientY <= rect.bottom + margin
+      );
+
+      if (inVicinity && !composer.classList.contains('drag-active')) {
+        composer.classList.add('drag-vicinity');
+      } else if (!inVicinity) {
+        composer.classList.remove('drag-vicinity');
+      }
     });
 
-    // 4. Drag and Drop onto composer with glowing response, dotted border, and dynamic placeholder
+    window.addEventListener('dragleave', (e) => {
+      if (!e.relatedTarget) {
+        composer.classList.remove('drag-vicinity', 'drag-active');
+        if (textarea) textarea.placeholder = defaultPlaceholder;
+      }
+    });
+
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      composer.classList.remove('drag-vicinity');
+    });
+
+    // 4. Drag and Drop onto composer with exaggerated shimmering reaction, dotted border, and dynamic placeholder
     const defaultPlaceholder = 'Search the web or type a URL...';
 
     composer.addEventListener('dragenter', (e) => {
       e.preventDefault();
+      composer.classList.remove('drag-vicinity');
       composer.classList.add('drag-active');
       if (textarea) textarea.placeholder = 'Drag and drop a file to search';
     });
@@ -431,6 +476,7 @@
     composer.addEventListener('dragover', (e) => {
       e.preventDefault();
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      composer.classList.remove('drag-vicinity');
       composer.classList.add('drag-active');
       if (textarea) textarea.placeholder = 'Drag and drop a file to search';
     });
@@ -446,7 +492,7 @@
     composer.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      composer.classList.remove('drag-active');
+      composer.classList.remove('drag-active', 'drag-vicinity');
       if (textarea) textarea.placeholder = defaultPlaceholder;
 
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
