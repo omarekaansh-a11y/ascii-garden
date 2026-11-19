@@ -328,11 +328,15 @@
 
     let attachedFiles = [];
 
-    function formatBytes(bytes) {
-      if (!bytes || bytes < 0) return '0 B';
-      if (bytes < 1024) return bytes + ' B';
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
-      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    const lensDropOverlay = document.getElementById('lens-drop-overlay');
+    const lensDropZone = lensDropOverlay ? lensDropOverlay.querySelector('.lens-drop-zone') : null;
+    const composerClearBtn = document.getElementById('composer-clear');
+
+    function updateClearButton() {
+      if (!composerClearBtn) return;
+      const hasText = textarea && textarea.value.trim().length > 0;
+      const hasFiles = attachedFiles.length > 0;
+      composerClearBtn.hidden = !(hasText || hasFiles);
     }
 
     function renderAttachments() {
@@ -340,64 +344,75 @@
 
       if (attachedFiles.length === 0) {
         attachmentsEl.hidden = true;
+        if (pillBtn) pillBtn.style.display = '';
         composer.classList.remove('has-files');
-        if (sendBtn && textarea) {
-          sendBtn.disabled = !textarea.value.trim();
+        if (sendBtn) {
+          sendBtn.classList.remove('has-lens-mode');
+          if (textarea) sendBtn.disabled = !textarea.value.trim();
         }
+        updateClearButton();
         return;
       }
 
       attachmentsEl.hidden = false;
+      if (pillBtn) pillBtn.style.display = 'none';
       composer.classList.add('has-files');
-      if (sendBtn) sendBtn.disabled = false;
+      if (sendBtn) {
+        sendBtn.classList.add('has-lens-mode');
+        sendBtn.disabled = false;
+      }
 
       attachedFiles.forEach((file, index) => {
-        const chip = document.createElement('div');
-        chip.className = 'file-chip';
-        chip.title = `${file.name} (${formatBytes(file.size)})`;
+        const container = document.createElement('div');
+        container.className = 'file-thumb-container';
 
         if (file.type.startsWith('image/')) {
           const img = document.createElement('img');
           img.className = 'file-chip-thumb';
           img.alt = file.name;
           img.src = URL.createObjectURL(file);
-          chip.appendChild(img);
+          container.appendChild(img);
         } else {
-          const ico = document.createElement('span');
-          ico.className = 'file-chip-icon';
-          ico.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>';
-          chip.appendChild(ico);
+          const doc = document.createElement('div');
+          doc.className = 'file-chip-doc';
+          doc.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+          container.appendChild(doc);
         }
-
-        const info = document.createElement('div');
-        info.className = 'file-chip-info';
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'file-chip-name';
-        nameSpan.textContent = file.name;
-        info.appendChild(nameSpan);
-
-        const sizeSpan = document.createElement('span');
-        sizeSpan.className = 'file-chip-size';
-        sizeSpan.textContent = formatBytes(file.size);
-        info.appendChild(sizeSpan);
-
-        chip.appendChild(info);
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'file-chip-remove';
         removeBtn.title = 'Remove';
         removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
-        removeBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+        removeBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           attachedFiles.splice(index, 1);
           renderAttachments();
         });
-        chip.appendChild(removeBtn);
+        container.appendChild(removeBtn);
 
-        attachmentsEl.appendChild(chip);
+        attachmentsEl.appendChild(container);
+      });
+
+      updateClearButton();
+    }
+
+    if (composerClearBtn) {
+      composerClearBtn.addEventListener('click', () => {
+        if (textarea) textarea.value = '';
+        attachedFiles = [];
+        renderAttachments();
+        if (textarea) textarea.focus();
+      });
+    }
+
+    if (textarea) {
+      textarea.addEventListener('input', () => {
+        updateClearButton();
+        if (sendBtn && attachedFiles.length === 0) {
+          sendBtn.disabled = !textarea.value.trim();
+        }
       });
     }
 
@@ -423,85 +438,102 @@
         attachedFiles.push(...Array.from(fileInput.files));
         fileInput.value = '';
         renderAttachments();
+        if (textarea) textarea.focus();
       }
     });
 
-    // 3. Global drag & drop prevention and vicinity detection around search bar
+    // 3. Google Lens Drop Overlay (matches Screenshot 1)
+    let dragCounter = 0;
+
+    function showDropOverlay() {
+      if (lensDropOverlay) {
+        lensDropOverlay.hidden = false;
+        composer.style.display = 'none';
+      }
+    }
+
+    function hideDropOverlay() {
+      if (lensDropOverlay) {
+        lensDropOverlay.hidden = true;
+        composer.style.display = '';
+        if (lensDropZone) lensDropZone.classList.remove('drag-over');
+      }
+    }
+
     window.addEventListener('dragenter', (e) => {
       e.preventDefault();
+      if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')) {
+        dragCounter++;
+        if (dragCounter === 1) {
+          showDropOverlay();
+        }
+      }
     });
 
     window.addEventListener('dragover', (e) => {
       e.preventDefault();
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-
-      const rect = composer.getBoundingClientRect();
-      const margin = 180;
-      const inVicinity = (
-        e.clientX >= rect.left - margin &&
-        e.clientX <= rect.right + margin &&
-        e.clientY >= rect.top - margin &&
-        e.clientY <= rect.bottom + margin
-      );
-
-      if (inVicinity && !composer.classList.contains('drag-active')) {
-        composer.classList.add('drag-vicinity');
-      } else if (!inVicinity) {
-        composer.classList.remove('drag-vicinity');
-      }
     });
 
     window.addEventListener('dragleave', (e) => {
-      if (!e.relatedTarget) {
-        composer.classList.remove('drag-vicinity', 'drag-active');
-        if (textarea) textarea.placeholder = defaultPlaceholder;
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        hideDropOverlay();
       }
     });
 
     window.addEventListener('drop', (e) => {
       e.preventDefault();
-      composer.classList.remove('drag-vicinity');
+      dragCounter = 0;
+      hideDropOverlay();
     });
 
-    // 4. Drag and Drop onto composer with exaggerated shimmering reaction, dotted border, and dynamic placeholder
-    const defaultPlaceholder = 'Search the web or type a URL...';
+    if (lensDropZone) {
+      lensDropZone.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        lensDropZone.classList.add('drag-over');
+      });
+      lensDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        lensDropZone.classList.add('drag-over');
+      });
+      lensDropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        if (!lensDropZone.contains(e.relatedTarget)) {
+          lensDropZone.classList.remove('drag-over');
+        }
+      });
+      lensDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        hideDropOverlay();
 
-    composer.addEventListener('dragenter', (e) => {
-      e.preventDefault();
-      composer.classList.remove('drag-vicinity');
-      composer.classList.add('drag-active');
-      if (textarea) textarea.placeholder = 'Drag and drop a file to search';
-    });
-
-    composer.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-      composer.classList.remove('drag-vicinity');
-      composer.classList.add('drag-active');
-      if (textarea) textarea.placeholder = 'Drag and drop a file to search';
-    });
-
-    composer.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      if (!composer.contains(e.relatedTarget)) {
-        composer.classList.remove('drag-active');
-        if (textarea) textarea.placeholder = defaultPlaceholder;
-      }
-    });
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          attachedFiles.push(...Array.from(e.dataTransfer.files));
+          renderAttachments();
+          if (textarea) textarea.focus();
+        }
+      });
+    }
 
     composer.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      composer.classList.remove('drag-active', 'drag-vicinity');
-      if (textarea) textarea.placeholder = defaultPlaceholder;
+      dragCounter = 0;
+      hideDropOverlay();
 
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
         attachedFiles.push(...Array.from(e.dataTransfer.files));
         renderAttachments();
+        if (textarea) textarea.focus();
       }
     });
 
-    // 5. Auto-close Tweaks when clicking or focusing the search bar
+    // 4. Auto-close Tweaks when clicking or focusing the search bar
     const closeTweaksIfOpen = () => {
       if (typeof window.__closeTweaks === 'function') {
         window.__closeTweaks();
