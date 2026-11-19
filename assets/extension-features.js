@@ -587,35 +587,168 @@
       });
     }
 
-    // Voice recognition on mic button
+    // 6. Voice Search with Google UI Overlay (Matching Screenshot 2)
     const voiceBtn = composer.querySelector('.icon-btn[aria-label="Voice input"]');
-    if (voiceBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const rec = new SpeechRec();
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.lang = navigator.language || 'en-US';
+    const voiceOverlay = document.getElementById('voice-search-overlay');
+    const voiceCloseBtn = document.getElementById('voice-close-btn');
+    const voiceStatusText = document.getElementById('voice-status-text');
+    const voiceMicBtn = document.getElementById('voice-mic-btn');
 
-      rec.onresult = (evt) => {
-        const transcript = evt.results[0][0].transcript;
-        if (textarea) {
-          textarea.value = transcript;
-          textarea.dispatchEvent(new Event('input'));
-          textarea.focus();
+    let recognition = null;
+    let isListening = false;
+
+    function openVoiceOverlay() {
+      if (!voiceOverlay) return;
+      voiceOverlay.hidden = false;
+      if (voiceStatusText) voiceStatusText.textContent = 'Listening...';
+      if (voiceMicBtn) voiceMicBtn.classList.add('listening');
+    }
+
+    function closeVoiceOverlay() {
+      if (!voiceOverlay) return;
+      voiceOverlay.hidden = true;
+      isListening = false;
+      if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+      if (recognition) {
+        try { recognition.abort(); } catch (e) {}
+      }
+    }
+
+    async function startVoiceRecognition() {
+      openVoiceOverlay();
+
+      // Ensure microphone permission via getUserMedia
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            if (voiceStatusText) {
+              voiceStatusText.textContent = 'Microphone access blocked. Click the lock/tune icon in the address bar to allow microphone access.';
+            }
+            if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+            return;
+          }
+        }
+      }
+
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        if (voiceStatusText) {
+          voiceStatusText.textContent = 'Voice search is not supported in this browser.';
+        }
+        if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+        return;
+      }
+
+      if (recognition) {
+        try { recognition.abort(); } catch (e) {}
+      }
+
+      recognition = new SpeechRec();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = navigator.language || 'en-US';
+
+      recognition.onstart = () => {
+        isListening = true;
+        if (voiceStatusText) voiceStatusText.textContent = 'Listening...';
+        if (voiceMicBtn) voiceMicBtn.classList.add('listening');
+      };
+
+      recognition.onresult = (evt) => {
+        let interim = '';
+        let final = '';
+        for (let i = evt.resultIndex; i < evt.results.length; ++i) {
+          if (evt.results[i].isFinal) {
+            final += evt.results[i][0].transcript;
+          } else {
+            interim += evt.results[i][0].transcript;
+          }
+        }
+
+        if (final) {
+          if (voiceStatusText) voiceStatusText.textContent = final;
+          if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+          isListening = false;
+          setTimeout(() => {
+            closeVoiceOverlay();
+            if (textarea) {
+              textarea.value = final;
+              textarea.dispatchEvent(new Event('input'));
+            }
+            doSubmit(final);
+          }, 450);
+        } else if (interim) {
+          if (voiceStatusText) voiceStatusText.textContent = interim;
         }
       };
 
-      voiceBtn.addEventListener('click', () => {
-        try {
-          voiceBtn.style.color = '#7aa2ff';
-          rec.start();
-        } catch (err) {}
-      });
-
-      rec.onend = () => {
-        voiceBtn.style.color = '';
+      recognition.onerror = (evt) => {
+        console.warn('Speech recognition error:', evt.error);
+        isListening = false;
+        if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+        if (evt.error === 'not-allowed') {
+          if (voiceStatusText) {
+            voiceStatusText.textContent = 'Microphone access blocked. Click the lock/tune icon in the address bar to allow microphone access.';
+          }
+        } else if (evt.error === 'no-speech') {
+          if (voiceStatusText) {
+            voiceStatusText.textContent = "Didn't hear that. Try again.";
+          }
+        } else {
+          if (voiceStatusText) {
+            voiceStatusText.textContent = "Voice search couldn't hear you. Click the mic to try again.";
+          }
+        }
       };
+
+      recognition.onend = () => {
+        isListening = false;
+        if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+      };
+
+      try {
+        recognition.start();
+      } catch (err) {
+        console.warn('Recognition start error:', err);
+      }
     }
+
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        startVoiceRecognition();
+      });
+    }
+
+    if (voiceCloseBtn) {
+      voiceCloseBtn.addEventListener('click', () => {
+        closeVoiceOverlay();
+      });
+    }
+
+    if (voiceMicBtn) {
+      voiceMicBtn.addEventListener('click', () => {
+        if (isListening) {
+          if (recognition) {
+            try { recognition.stop(); } catch (e) {}
+          }
+          isListening = false;
+          if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+          if (voiceStatusText) voiceStatusText.textContent = 'Paused. Click the mic to speak.';
+        } else {
+          startVoiceRecognition();
+        }
+      });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && voiceOverlay && !voiceOverlay.hidden) {
+        closeVoiceOverlay();
+      }
+    });
   }
 
   // ------------------------------------------------------------
