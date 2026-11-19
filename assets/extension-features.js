@@ -216,35 +216,45 @@
   function executeSearch(raw, files = []) {
     let query = (raw || '').trim();
 
-    // If files are attached but no text, synthesize query from filenames
-    if (!query && files.length > 0) {
-      query = files.map(f => f.name).join(' ');
+    // If files are attached, open Google AI Overview / AI Chat mode with query & file context
+    if (files.length > 0) {
+      const fileNames = files.map(f => f.name).join(' ');
+      if (!query) {
+        query = fileNames;
+      } else if (!query.toLowerCase().includes(fileNames.toLowerCase())) {
+        query = `${query} ${fileNames}`;
+      }
+
+      // Copy image to clipboard if possible for instant pasting into AI chat
+      if (navigator.clipboard) {
+        try {
+          const first = files[0];
+          if (first && first.type.startsWith('image/')) {
+            navigator.clipboard.write([
+              new ClipboardItem({ [first.type]: first })
+            ]).catch(() => {});
+          }
+        } catch (e) {}
+      }
+
+      // Google AI Overview / AI Mode URL (udm=50 activates Google conversational AI Overview)
+      const aiUrl = 'https://www.google.com/search?q=' + encodeURIComponent(query) + '&udm=50';
+      location.href = aiUrl;
+      return;
     }
 
     if (!query) return;
 
     // Check if it's an explicit URL (only when no files attached)
-    if (files.length === 0 && /^https?:\/\//i.test(query)) {
+    if (/^https?:\/\//i.test(query)) {
       location.href = query;
       return;
     }
 
     // Check if it's a domain name (e.g. google.com, localhost:3000)
-    if (files.length === 0 && !/\s/.test(query) && /^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(query)) {
+    if (!/\s/.test(query) && /^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(query)) {
       location.href = 'https://' + query;
       return;
-    }
-
-    // If files are attached, open preview for media files
-    if (files.length > 0) {
-      for (const file of files) {
-        if (file.type.startsWith('image/')) {
-          try {
-            const blobUrl = URL.createObjectURL(file);
-            window.open(blobUrl, '_blank');
-          } catch(e) {}
-        }
-      }
     }
 
     // Use Chrome's search API if in extension context
@@ -390,22 +400,27 @@
       e.preventDefault();
     });
 
-    // 4. Drag and Drop onto composer with glowing response and dotted border
+    // 4. Drag and Drop onto composer with glowing response, dotted border, and dynamic placeholder
+    const defaultPlaceholder = 'Search the web or type a URL...';
+
     composer.addEventListener('dragenter', (e) => {
       e.preventDefault();
       composer.classList.add('drag-active');
+      if (textarea) textarea.placeholder = 'Drag and drop a file to search';
     });
 
     composer.addEventListener('dragover', (e) => {
       e.preventDefault();
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
       composer.classList.add('drag-active');
+      if (textarea) textarea.placeholder = 'Drag and drop a file to search';
     });
 
     composer.addEventListener('dragleave', (e) => {
       e.preventDefault();
       if (!composer.contains(e.relatedTarget)) {
         composer.classList.remove('drag-active');
+        if (textarea) textarea.placeholder = defaultPlaceholder;
       }
     });
 
@@ -413,6 +428,7 @@
       e.preventDefault();
       e.stopPropagation();
       composer.classList.remove('drag-active');
+      if (textarea) textarea.placeholder = defaultPlaceholder;
 
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
         attachedFiles.push(...Array.from(e.dataTransfer.files));
