@@ -216,7 +216,7 @@
   function executeSearch(raw, files = []) {
     let query = (raw || '').trim();
 
-    // If files are attached, open Google AI Overview / AI Chat mode with query & file context
+    // If files are attached, synthesize query with file context and copy image to clipboard
     if (files.length > 0) {
       const fileNames = files.map(f => f.name).join(' ');
       if (!query) {
@@ -236,11 +236,6 @@
           }
         } catch (e) {}
       }
-
-      // Google AI Overview / AI Mode URL (udm=50 activates Google conversational AI Overview)
-      const aiUrl = 'https://www.google.com/search?q=' + encodeURIComponent(query) + '&udm=50';
-      location.href = aiUrl;
-      return;
     }
 
     if (!query) return;
