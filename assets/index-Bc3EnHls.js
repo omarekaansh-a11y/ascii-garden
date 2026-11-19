@@ -42,29 +42,68 @@ const G_turtle = {
   scale: 1.35,
   speed: 46,
   trail: { light: [140, 115, 60], dark: [210, 180, 95] },
-  create: (t) => ({ ...t, phase: F(0, B), stroke: 0, startledUntil: 0 }),
+  create: (t) => ({ ...t, phase: F(0, B), stroke: 0, startledUntil: 0, fleeDir: 0, fleeSpeed: 0, fleeFrom: 0 }),
   update(t, e, s) {
     const i = e.tuning;
-    t.phase += s * 2.8 * (i.paddleRate || 1);
+    const now = e.time;
+    const isStartled = now < t.startledUntil;
+
+    // 1. Reset per-creature force accumulator to prevent force pollution across flock
+    const o = e.begin();
+
+    // 2. Flipper propulsion
+    const rate = (i.paddleRate || 1) * (isStartled ? 1.8 : 1);
+    t.phase += s * 2.8 * rate;
     const stroke = Math.sin(t.phase);
-    const isStartled = e.time < t.startledUntil;
-    const power = isStartled ? 2.5 : 1;
+    const power = isStartled ? 2.2 : 1;
     const surge = Math.max(0, stroke) * 26 * (i.speed || 1) * power;
-    t.vx += Math.cos(t.heading) * surge * s;
-    t.vy += Math.sin(t.heading) * surge * s;
-    const sway = Math.sin(t.phase) * 0.035;
+    o.x += Math.cos(t.heading) * surge;
+    o.y += Math.sin(t.heading) * surge;
+
+    // 3. Steering & target velocity
     const a = e.cruise(t);
-    e.steer(t, e.heading + t.bias * (i.spread || 0) + sway, a, (i.grip || 1.8) * power);
-    e.separate(t, i.separation || 550);
-    e.move(t, s, a * (isStartled ? 2 : 1));
+    const sway = Math.sin(t.phase) * 0.035;
+    const normalHeading = e.heading + t.bias * (i.spread || 0) + sway;
+
+    let targetHeading = normalHeading;
+    let targetSpeed = a;
+    let grip = i.grip || 1.8;
+
+    if (isStartled) {
+      const elapsed = now - (t.fleeFrom || (now - 0.1));
+      const totalDur = Math.max(0.1, t.startledUntil - (t.fleeFrom || (now - 0.1)));
+      const decay = Math.max(0, 1 - (elapsed / totalDur));
+      targetHeading = t.fleeDir;
+      targetSpeed = a + ((t.fleeSpeed || (a * 2)) - a) * (decay * decay);
+      grip = (i.grip || 1.8) * 1.5;
+    }
+
+    e.steer(t, targetHeading, targetSpeed, grip);
+
+    // 4. Separation
+    e.separate(t, i.separation || 450, 0.45);
+
+    // 5. Integrate motion with speed limits
+    const maxSpd = isStartled ? Math.max(a * 2.2, t.fleeSpeed || (a * 2.2)) : a * 1.8;
+    const spd = e.move(t, s, maxSpd);
     e.passed(t, t.span * 1.5) && e.reenter(t);
+
+    // 6. Smooth directional banking (prevents jitter / vibration and gives natural swimming turn)
+    if (spd > 6) {
+      const turnRate = isStartled ? 4.5 : 2.5;
+      e.face(t, s, turnRate);
+    }
   },
   startle(t, e, s, i, n) {
     t.phase = Math.floor(t.phase / B) * B + Math.PI * 0.5;
-    const a = 240 * i * t.depth;
-    t.vx += Math.cos(t.heading) * a;
-    t.vy += Math.sin(t.heading) * a;
-    t.startledUntil = n.time + 1.2;
+    const scare = 1 + 1.2 * i;
+    t.fleeDir = Math.atan2(s, e) + F(-0.15, 0.15);
+    t.fleeSpeed = n.cruise(t) * (2.0 + 1.4 * i);
+    t.fleeFrom = n.time;
+    t.startledUntil = n.time + 1.1 * scare;
+    const impulse = 180 * i * t.depth;
+    t.vx += Math.cos(t.fleeDir) * impulse;
+    t.vy += Math.sin(t.fleeDir) * impulse;
   },
   draw(t, e, s) {
     const i = s.tuning;
