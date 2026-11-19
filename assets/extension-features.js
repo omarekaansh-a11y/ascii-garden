@@ -599,6 +599,7 @@
 
     function openVoiceOverlay() {
       if (!voiceOverlay) return;
+      document.body.classList.add('voice-active');
       voiceOverlay.hidden = false;
       if (voiceStatusText) voiceStatusText.textContent = 'Listening...';
       if (voiceMicBtn) voiceMicBtn.classList.add('listening');
@@ -606,6 +607,7 @@
 
     function closeVoiceOverlay() {
       if (!voiceOverlay) return;
+      document.body.classList.remove('voice-active');
       voiceOverlay.hidden = true;
       isListening = false;
       if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
