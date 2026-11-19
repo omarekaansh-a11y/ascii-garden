@@ -172,8 +172,8 @@ const G_turtle = {
       x,
       y,
       born: flock.time,
-      duration: 2.0,
-      maxRadius: 240
+      duration: 2.2,
+      maxRadius: 260
     });
     if (turtleRipples.length > 8) turtleRipples.splice(0, turtleRipples.length - 8);
 
@@ -186,20 +186,20 @@ const G_turtle = {
   },
   drawAll(flock, pen) {
     const now = flock.time;
-    const rippleColor = pen.theme === "dark" ? [105, 215, 235] : [65, 145, 175];
+    const rippleColor = pen.theme === "dark" ? [135, 230, 255] : [35, 140, 185];
     const cw = pen.cw || 12;
-    const waveSpeed = 125;
-    const offsets = [0, 0.22, 0.44];
+    const waveSpeed = 130;
+    const offsets = [0, 0.20, 0.40];
 
     for (let ri = 0; ri < turtleRipples.length; ri++) {
       const rip = turtleRipples[ri];
       const elapsed = now - rip.born;
       if (elapsed < 0 || elapsed > rip.duration) continue;
 
-      // 1. Central impact droplet right at origin (first 0.22s)
-      if (elapsed < 0.22) {
-        const centerAmp = Math.sin((elapsed / 0.22) * Math.PI);
-        const fog = Math.max(0.08, 1 - centerAmp * 0.88);
+      // 1. Central impact droplet right at origin (first 0.24s)
+      if (elapsed < 0.24) {
+        const centerAmp = Math.sin((elapsed / 0.24) * Math.PI);
+        const fog = Math.max(0.0, 1 - centerAmp * 1.15);
         pen.dot(rip.x, rip.y, "·", rippleColor, 1, fog);
       }
 
@@ -210,19 +210,19 @@ const G_turtle = {
         const r = waveAge * waveSpeed;
         if (r > rip.maxRadius) continue;
 
-        const decay = Math.pow(Math.max(0, 1 - r / rip.maxRadius), 1.25);
+        const decay = Math.pow(Math.max(0, 1 - r / rip.maxRadius), 1.05);
         const easeIn = Math.min(1, waveAge / 0.05);
-        const amp = easeIn * decay * (1 - wi * 0.22);
+        const amp = easeIn * decay * (1 - wi * 0.18);
         if (amp <= 0.02) continue;
-        const fog = Math.max(0.08, 1 - amp * 0.78);
+        const fog = Math.max(0.0, 1 - amp * 1.05);
 
-        if (r < 6) {
+        if (r < 7) {
           pen.dot(rip.x - r, rip.y, "·", rippleColor, 1, fog);
           pen.dot(rip.x + r, rip.y, "·", rippleColor, 1, fog);
           pen.dot(rip.x, rip.y - r * 0.72, "·", rippleColor, 1, fog);
           pen.dot(rip.x, rip.y + r * 0.72, "·", rippleColor, 1, fog);
         } else {
-          const count = Math.max(6, Math.floor((2 * Math.PI * r) / (cw * 1.8)));
+          const count = Math.max(8, Math.floor((2 * Math.PI * r) / (cw * 1.25)));
           for (let k = 0; k < count; k++) {
             const theta = (k / count) * Math.PI * 2;
             const px = rip.x + Math.cos(theta) * r;
