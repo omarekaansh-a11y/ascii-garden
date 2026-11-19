@@ -354,10 +354,18 @@
     }
 
     // 1. "Add tabs or files" pill button opens file explorer
-    if (pillBtn) {
+    if (pillBtn && fileInput) {
       pillBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        fileInput.click();
+        if (pillBtn.tagName.toLowerCase() !== 'label') {
+          e.preventDefault();
+          fileInput.click();
+        }
+      });
+      pillBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          fileInput.click();
+        }
       });
     }
 
@@ -370,28 +378,33 @@
       }
     });
 
-    // 3. Drag and Drop with glowing response and dotted border
-    let dragDepth = 0;
+    // 3. Global drag & drop prevention so dragging files into Chrome does not navigate away
+    window.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+    });
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    });
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+    });
 
+    // 4. Drag and Drop onto composer with glowing response and dotted border
     composer.addEventListener('dragenter', (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      dragDepth++;
       composer.classList.add('drag-active');
     });
 
     composer.addEventListener('dragover', (e) => {
       e.preventDefault();
-      e.stopPropagation();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
       composer.classList.add('drag-active');
     });
 
     composer.addEventListener('dragleave', (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      dragDepth--;
-      if (dragDepth <= 0) {
-        dragDepth = 0;
+      if (!composer.contains(e.relatedTarget)) {
         composer.classList.remove('drag-active');
       }
     });
@@ -399,7 +412,6 @@
     composer.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dragDepth = 0;
       composer.classList.remove('drag-active');
 
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
@@ -407,6 +419,27 @@
         renderAttachments();
       }
     });
+
+    // 5. Auto-close Tweaks when clicking or focusing the search bar
+    const closeTweaksIfOpen = () => {
+      if (typeof window.__closeTweaks === 'function') {
+        window.__closeTweaks();
+      } else {
+        const tweaks = document.querySelector('.tweaks');
+        const tweaksOpen = document.querySelector('.tweaks-open');
+        if (tweaks && !tweaks.hidden) {
+          tweaks.hidden = true;
+          if (tweaksOpen) tweaksOpen.hidden = false;
+          try { localStorage.setItem('ascii-animals:tweaks-open', '0'); } catch(e) {}
+        }
+      }
+    };
+
+    composer.addEventListener('pointerdown', () => closeTweaksIfOpen());
+    if (textarea) {
+      textarea.addEventListener('focus', () => closeTweaksIfOpen());
+      textarea.addEventListener('pointerdown', () => closeTweaksIfOpen());
+    }
 
     function doSubmit(text) {
       const currentFiles = [...attachedFiles];

@@ -112,8 +112,8 @@
   display: inline-flex;
   position: relative;
   overflow: hidden;
-  height: 1.15em;
-  line-height: 1.15em;
+  height: 1.20em;
+  line-height: 1.20em;
   vertical-align: middle;
   align-items: center;
   justify-content: center;
@@ -203,8 +203,8 @@
 }
 
 .clock-ampm.odo-slot {
-  height: 1.15em;
-  line-height: 1.15em;
+  height: 1.20em;
+  line-height: 1.20em;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -297,7 +297,9 @@
 
 /* Glowing response with dotted border when dragging files into composer */
 .composer.drag-active {
-  border: 1.8px dashed rgba(122, 162, 255, 0.95) !important;
+  border: 1.5px dotted rgba(255, 255, 255, 0.85) !important;
+  outline: 2px dotted rgba(122, 162, 255, 0.5) !important;
+  outline-offset: 2px;
   box-shadow: 0 0 32px rgba(122, 162, 255, 0.45),
               inset 0 0 24px rgba(122, 162, 255, 0.2),
               var(--glass-shadow) !important;
