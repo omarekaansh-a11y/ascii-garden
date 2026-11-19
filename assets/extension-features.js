@@ -600,20 +600,25 @@
     function openVoiceOverlay() {
       if (!voiceOverlay) return;
       document.body.classList.add('voice-active');
+      voiceOverlay.classList.remove('closing');
       voiceOverlay.hidden = false;
       if (voiceStatusText) voiceStatusText.textContent = 'Listening...';
       if (voiceMicBtn) voiceMicBtn.classList.add('listening');
     }
 
     function closeVoiceOverlay() {
-      if (!voiceOverlay) return;
-      document.body.classList.remove('voice-active');
-      voiceOverlay.hidden = true;
-      isListening = false;
-      if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
-      if (recognition) {
-        try { recognition.abort(); } catch (e) {}
-      }
+      if (!voiceOverlay || voiceOverlay.hidden) return;
+      voiceOverlay.classList.add('closing');
+      setTimeout(() => {
+        voiceOverlay.hidden = true;
+        voiceOverlay.classList.remove('closing');
+        document.body.classList.remove('voice-active');
+        isListening = false;
+        if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+        if (recognition) {
+          try { recognition.abort(); } catch (e) {}
+        }
+      }, 120);
     }
 
     async function startVoiceRecognition() {
