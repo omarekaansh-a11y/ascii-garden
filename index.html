@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>New Tab</title>
+    <link rel="icon" type="image/png" href="icons/icon32.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" crossorigin href="./assets/index-BPKcByTV.css">
+  </head>
+  <body>
+    <canvas aria-hidden="true"></canvas>
+
+    <!-- Bookmarks Bar -->
+    <nav class="bookmarks-bar glass" id="bookmarks-bar" aria-label="Bookmarks"></nav>
+    <div class="bm-menu glass" id="bm-menu" role="menu" hidden></div>
+
+    <!-- Displacement map for liquid-glass refraction -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <filter id="liquid-glass" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.007 0.011" numOctaves="2" seed="11" result="noise" />
+        <feGaussianBlur in="noise" stdDeviation="2" result="map" />
+        <feDisplacementMap in="SourceGraphic" in2="map" scale="40" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </svg>
+
+    <!-- Top animal selector bar -->
+    <div class="top-bar">
+      <div class="choices glass" role="radiogroup" aria-label="Animal"></div>
+    </div>
+
+    <!-- Center Stage: Clock, greeting, and search composer -->
+    <main class="stage">
+      <div class="masthead">
+        <div class="clock" id="clock" role="timer" aria-label="Current time" title="Click to toggle 12h / 24h format">
+          <span class="clock-time"></span>
+        </div>
+        <h1 class="greeting">Hello, ekaansh.</h1>
+      </div>
+      <form class="composer glass" autocomplete="off">
+        <div class="composer-field">
+          <svg class="composer-search" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m15.5 15.5 5 5" />
+          </svg>
+          <textarea name="prompt" rows="1" placeholder="Search the web or type a URL..." aria-label="Search or ask anything"></textarea>
+        </div>
+        <div class="composer-bar">
+          <button type="button" class="pill" aria-label="Add tabs or files">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span>Add tabs or files</span>
+          </button>
+          <div class="tools">
+            <button type="button" class="icon-btn" aria-label="Voice input" title="Voice search">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+              </svg>
+            </button>
+            <button type="submit" class="send" aria-label="Search" title="Search (Enter)" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="composer-attachments" id="composer-attachments" hidden></div>
+        <input type="file" id="composer-file-input" multiple style="display: none;" />
+      </form>
+    </main>
+
+    <!-- Chrome MV3 Compliant Entry Point (Zero inline scripts) -->
+    <script type="module" src="./assets/app-init.js"></script>
+  </body>
+</html>
