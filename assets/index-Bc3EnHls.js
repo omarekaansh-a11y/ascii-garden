@@ -192,8 +192,6 @@ const G_turtle = {
     });
     if (turtleRipples.length > 8) turtleRipples.splice(0, turtleRipples.length - 8);
 
-    flock.events.push({ x, y, radius: 8, amount: 1.5 });
-
     for (const c of flock.creatures) {
       const dx = c.x - x, dy = c.y - y, dist = Math.hypot(dx, dy) || 1;
       if (dist > pe) continue;
@@ -234,7 +232,6 @@ const G_turtle = {
           const sinT = Math.abs(Math.sin(theta));
           const glyph = sinT < 0.38 ? "~" : (Math.abs(Math.cos(theta)) < 0.38 ? (k % 2 === 0 ? "-" : "~") : (k % 2 === 0 ? "·" : "."));
           pen.dot(px, py, glyph, rippleColor, 1, fog);
-          if (k % 2 === 0) pen.shed(px, py, 0.015 * alpha);
         }
       }
     }
