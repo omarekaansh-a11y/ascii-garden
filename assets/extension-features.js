@@ -830,7 +830,7 @@
       }
       if (tag === 'textarea' || tag === 'input' || e.metaKey || e.ctrlKey || e.altKey) return;
       const num = parseInt(e.key, 10);
-      if (num >= 1 && num <= 8) {
+      if (num >= 1 && num <= 9) {
         const buttons = document.querySelectorAll('.choices button[role="radio"]');
         if (buttons[num - 1]) buttons[num - 1].click();
       }

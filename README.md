@@ -14,6 +14,7 @@ Pick one from the row of animals in the top bar. Dark mode only, and each animal
 | Crane | red-crowned, after the paintings: each flies its own way along the course, flapping at its own pace and gliding now and then (Folding flap in Tweaks for a slow downstroke and a quick, wrist-folding upstroke); broad white wings with splayed fingers and black secondaries, a red crown, dark eyes on the nearer ones |
 | Crab | scuttle sideways in bursts, legs stepping, footprints in the sand; tap and they bolt away, claws up |
 | Sea Turtle | green sea turtles: rhythmic paddle strokes on broad front flippers and long graceful glides; rich amber-gold and olive mosaic shell (carapace) with distinct scute tiles and radiating patterns; tap and they bank into a startled turn |
+| Firefly | bioluminescent night swarm: dark bronze and olive chitin with fluttering micro-wings and luminous lanterns glowing in 50/50 warm golden-yellow and neon chartreuse-green with ambient light halos; distant fireflies naturally render as single twinkling bokeh dots based on Far bias; organic flock cohesion and hover-drifting; phototaxis gently draws them toward your mouse cursor across open canvas (staying clear of the search bar and tweaks drawer); tap to emit water ripples and scatter fireflies in the opposite direction (adjustable via Click scatter) |
 
 Everywhere:
 
@@ -44,7 +45,7 @@ Everywhere:
 
 | Key | Action |
 | --- | --- |
-| `1` to `8` | Switch animal (Butterfly, Koi, Jellyfish, Dragonfly, Frog, Crane, Crab, Sea Turtle) |
+| `1` to `9` | Switch animal (Butterfly, Koi, Jellyfish, Dragonfly, Frog, Crane, Crab, Sea Turtle, Firefly) |
 | `Esc` | Close Tweaks panel or Bookmarks menu |
 
 Built on the engine and renderer from [ascii-animals](https://github.com/DesignerStephen1/ascii-animals) by Stephen and [ascii-sharks](https://github.com/stackedlol/ascii-sharks). MIT

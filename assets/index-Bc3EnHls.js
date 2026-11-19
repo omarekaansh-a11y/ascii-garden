@@ -240,4 +240,441 @@ const G_turtle = {
     }
   }
 };
-const ct={butterflies:gs,koi:Jn,jellyfish:Nn,dragonflies:rn,frogs:En,cranes:Rs,crabs:vs,turtles:G_turtle},jn=(()=>{let o=Object.keys(ct);try{const s=localStorage.getItem("ascii-animals:animal-order");if(s){const p=JSON.parse(s);if(Array.isArray(p)&&p.length){const v=p.filter(k=>k in ct),r=o.filter(k=>!v.includes(k));o=[...v,...r]}}}catch(e){}return o})(),Pt=1/60,We=t=>typeof t=="string"?ct[t]:t,_e=4;class ti{constructor(e,{animal:s="butterflies",count:i,theme:n="light",tuning:a}={}){S(this,"tuning");S(this,"animal");S(this,"flock");S(this,"renderer");S(this,"count");S(this,"raf",0);S(this,"last",0);S(this,"acc",0);S(this,"visible",!0);S(this,"reducedMotion");S(this,"resizeObserver");S(this,"intersectionObserver");S(this,"disposed",!1);S(this,"frame",e=>{this.raf=requestAnimationFrame(this.frame);const mf=this.tuning.fps||60,mi=1e3/mf;if(e-this.last<mi-1)return;const s=Math.min(.1,(e-this.last)/1e3);this.last=e,this.acc+=s;let i=0;for(;this.acc>=Pt&&i<_e;)this.flock.step(Pt),this.acc-=Pt,i++;i===_e&&(this.acc=0),this.renderer.render(this.flock,s)});S(this,"onMotionPreference",()=>{this.reducedMotion.matches?(cancelAnimationFrame(this.raf),this.drawStill()):this.schedule()});S(this,"onPointerDown",e=>{if(this.reducedMotion.matches||e.target!==this.canvas)return;const s=this.canvas.getBoundingClientRect();this.flock.startle(e.clientX-s.left,e.clientY-s.top)});var o;this.canvas=e,this.count=i,this.animal=We(s),this.tuning={...this.animal.defaults,...a},this.flock=new ge(this.animal,this.tuning,i),this.renderer=new qs(e,this.tuning),this.renderer.setFontFamily(getComputedStyle(e).fontFamily),this.renderer.setAnimal(this.animal,this.tuning),this.renderer.setTheme(n),this.reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)"),this.resizeObserver=new ResizeObserver(()=>this.resize()),this.resizeObserver.observe(e),this.intersectionObserver=new IntersectionObserver(([r])=>{this.visible=r.isIntersecting,this.schedule()}),this.intersectionObserver.observe(e),document.addEventListener("visibilitychange",()=>{document.hidden?(cancelAnimationFrame(this.raf),this.visible=!1):(this.visible=!0,this.schedule())}),this.reducedMotion.addEventListener("change",this.onMotionPreference),window.addEventListener("pointerdown",this.onPointerDown,{passive:!0}),this.resize(),(o=document.fonts)==null||o.load(`600 16px ${getComputedStyle(e).fontFamily}`).then(()=>{!this.disposed&&this.reducedMotion.matches&&this.drawStill()}),this.schedule()}destroy(){this.disposed=!0,cancelAnimationFrame(this.raf),this.resizeObserver.disconnect(),this.intersectionObserver.disconnect(),this.reducedMotion.removeEventListener("change",this.onMotionPreference),window.removeEventListener("pointerdown",this.onPointerDown)}setAnimal(e,s){this.animal=We(e),this.tuning={...this.animal.defaults,...s},this.flock=new ge(this.animal,this.tuning,this.count),this.renderer.setAnimal(this.animal,this.tuning),this.resize()}set(e,s){this.tuning[e]=s,e==="detail"?this.resize():(e==="hueShift"||e==="grid")&&this.renderer.restyle(),this.reducedMotion.matches&&this.drawStill()}setTheme(e){this.renderer.setTheme(e),this.reducedMotion.matches&&this.drawStill()}resize(){const e=this.canvas.getBoundingClientRect();if(e.width<1||e.height<1)return;const s=Math.min(window.devicePixelRatio||1,2);this.renderer.resize(e.width,e.height,s),this.flock.resize(e.width,e.height),this.reducedMotion.matches&&this.drawStill()}schedule(){cancelAnimationFrame(this.raf),!(this.disposed||!this.visible||this.reducedMotion.matches)&&(this.last=performance.now(),this.raf=requestAnimationFrame(this.frame))}drawStill(){if(this.flock.time<4)for(let e=0;e<240;e++)this.flock.step(Pt);this.renderer.render(this.flock,Pt)}}function ei(t,e=new Date){const s=e.getHours();return s>=5&&s<12?`Good morning, ${t}`:s>=12&&s<17?`Good afternoon, ${t}`:s>=17&&s<22?`Good evening, ${t}`:`Still up, ${t}?`}function si(t){const e=document.querySelector(".greeting");if(!e)return;const s=()=>e.textContent=ei(t);s(),setInterval(s,6e4)}function ni(){const t=document.querySelector(".composer"),e=t.querySelector("textarea"),s=t.querySelector(".send");function i(){e.style.height="auto",e.style.height=`${e.scrollHeight}px`,e.style.overflowY=e.scrollHeight>e.clientHeight+1?"auto":"hidden",s.disabled=e.value.trim()===""}e.addEventListener("input",i),matchMedia("(hover: hover) and (pointer: fine)").matches&&e.focus({preventScroll:!0}),e.addEventListener("keydown",n=>{n.key==="Enter"&&!n.shiftKey&&!n.isComposing&&(n.preventDefault(),t.requestSubmit())}),t.addEventListener("submit",n=>{n.preventDefault();const a=e.value.trim();a&&(t.dispatchEvent(new CustomEvent("chat:submit",{detail:{text:a}})),e.value="",i())})}function ii(t,e,s,i){var h;const n=document.createElement("span");n.className="thumb",n.setAttribute("aria-hidden","true"),t.append(n);let _dragBtn=null,_didDrag=!1;const a=e.map(l=>{const c=document.createElement("button");c.type="button",c.setAttribute("role","radio"),c.setAttribute("draggable","true"),c.dataset.value=l.value;const d=l.swatch?`<span class="dot" style="--swatch: ${l.swatch}" aria-hidden="true"></span>`:"";c.innerHTML=`${d}<span>${l.label}</span>`;c.addEventListener("click",()=>{_didDrag?(_didDrag=!1):r(l.value,!0)});c.addEventListener("dragstart",ev=>{_dragBtn=c,_didDrag=!1,c.classList.add("dragging"),ev.dataTransfer&&(ev.dataTransfer.effectAllowed="move",ev.dataTransfer.setData("text/plain",l.value))});c.addEventListener("dragover",ev=>{ev.preventDefault(),ev.dataTransfer&&(ev.dataTransfer.dropEffect="move");if(!_dragBtn||_dragBtn===c)return;_didDrag=!0;const rect=c.getBoundingClientRect();ev.clientX<rect.left+rect.width/2?t.insertBefore(_dragBtn,c):t.insertBefore(_dragBtn,c.nextSibling);o()});c.addEventListener("dragend",()=>{_dragBtn&&(_dragBtn.classList.remove("dragging"),_dragBtn=null);const nbs=Array.from(t.querySelectorAll('button[role="radio"]'));a.splice(0,a.length,...nbs);const no=nbs.map(b=>b.dataset.value);try{localStorage.setItem("ascii-animals:animal-order",JSON.stringify(no));typeof chrome!=="undefined"&&chrome.storage&&chrome.storage.local&&chrome.storage.local.set({"ascii-animals:animal-order":JSON.stringify(no)})}catch(err){}o();setTimeout(()=>{_didDrag=!1},120)});t.append(c);return c});const topBar=t.closest(".top-bar")||t.parentElement;if(topBar&&!topBar.querySelector(".modes-tip")){const tip=document.createElement("div");tip.className="modes-tip",tip.textContent="Hold and drag to reorder modes",tip.setAttribute("aria-hidden","true"),topBar.append(tip)}function o(){const l=a.find(c=>c.getAttribute("aria-checked")==="true");l&&(n.style.translate=`${l.offsetLeft}px 0`,n.style.width=`${l.offsetWidth}px`)}function r(l,c){for(const d of a){const u=d.dataset.value===l;d.setAttribute("aria-checked",String(u)),d.tabIndex=u?0:-1,u&&d.scrollIntoView({block:"nearest",inline:"nearest"})}o(),c&&i(l)}t.addEventListener("keydown",l=>{const c=a.indexOf(document.activeElement);if(c<0||l.key!=="ArrowRight"&&l.key!=="ArrowLeft")return;l.preventDefault();const d=a[(c+(l.key==="ArrowRight"?1:-1)+a.length)%a.length];d.focus(),r(d.dataset.value,!0)}),r(s,!1),(h=document.fonts)==null||h.ready.then(o),window.addEventListener("resize",o)}const le="ascii-animals:",re=new URLSearchParams(location.search),ai=Number(re.get("count"))||void 0,Ue=t=>t!==null&&t in ct;let he=null;try{he=localStorage.getItem(le+"animal")}catch{}let tt=Ue(re.get("animal"))?re.get("animal"):Ue(he)?he:"butterflies";const Gt=new ti(document.querySelector("canvas"),{animal:tt,count:ai,theme:"dark"}),ce=t=>`${le}tweaks:${t}`;function Qe(t){const e=ct[t],s=new Set(e.hide??[]);return i=>{const n=o=>{if("toggle"in o)return i.toggle(o.key,o.label,o.hint);const r=i.knob(o.key,o.label,o.min,o.max,o.step,o.hint),h=o.disabledWhen;return h?{...r,disabled:()=>!!Gt.tuning[h]}:r},a=o=>o.filter(r=>!s.has(r.key)).map(n);return[["General",[i.knob("fps","Max FPS",30,144,5,"Target frame rate limit (default 60). Set to 60 or 120+ for high-refresh screens, or lower to save battery."),i.choice("Clock",[{label:"12 hr",value:"12"},{label:"24 hr",value:"24"}],"Choose between a 12 hour clock format or 24 hour clock format(or just simply click on the clock to do so)")]],["Movement",a(ue.movement)],...e.controls.map(([o,r])=>[o,r.map(n)]),["Look",a(ue.look.filter(r=>r.key!=="fps"))]]}}let Ge=qe(Gt,ct[tt].defaults,Qe(tt),{storageKey:ce(tt)});window.addEventListener("storage",t=>{t.key===ce(tt)&&location.reload()});ii(document.querySelector(".choices"),jn.map(t=>({value:t,label:ct[t].label,swatch:`rgb(${ct[t].swatch.join(",")})`})),tt,t=>{tt=t,Gt.setAnimal(tt),Ge.destroy(),Ge=qe(Gt,ct[tt].defaults,Qe(tt),{storageKey:ce(tt)});try{localStorage.setItem(le+"animal",tt)}catch{}});ni();si(localStorage.getItem("ascii-animals:name")||"ekaansh");
+const fireflyMouse = { x: -1000, y: -1000, active: false, lastMove: 0 };
+if (typeof window !== "undefined") {
+  const deactivateMouse = () => {
+    fireflyMouse.active = false;
+    fireflyMouse.x = -1000;
+    fireflyMouse.y = -1000;
+  };
+
+  const handlePointer = (e) => {
+    // 1. Offscreen boundary check
+    if (e.clientX < 0 || e.clientY < 0 || e.clientX > window.innerWidth || e.clientY > window.innerHeight) {
+      deactivateMouse();
+      return;
+    }
+
+    // 2. Tweaks menu or Search bar check (fireflies cannot see pointer over these UI elements)
+    const target = e.target;
+    const el = (target && target.closest) ? target : (document.elementFromPoint ? document.elementFromPoint(e.clientX, e.clientY) : null);
+    if (el && el.closest && el.closest(".tweaks, .tweaks-open, .composer")) {
+      deactivateMouse();
+      return;
+    }
+
+    // 3. Canvas coordinates
+    const c = document.querySelector("canvas");
+    if (!c) {
+      deactivateMouse();
+      return;
+    }
+    const r = c.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+
+    if (mx < 0 || my < 0 || mx > r.width || my > r.height) {
+      deactivateMouse();
+      return;
+    }
+
+    fireflyMouse.x = mx;
+    fireflyMouse.y = my;
+    fireflyMouse.active = true;
+    fireflyMouse.lastMove = performance.now();
+  };
+
+  window.addEventListener("pointermove", handlePointer, { passive: true });
+  window.addEventListener("pointerdown", handlePointer, { passive: true });
+  window.addEventListener("pointerleave", deactivateMouse);
+  document.addEventListener("mouseleave", deactivateMouse);
+  document.addEventListener("mouseout", (e) => {
+    if (!e.relatedTarget && !e.toElement) deactivateMouse();
+  });
+  window.addEventListener("blur", deactivateMouse);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) deactivateMouse();
+  });
+}
+const fireflyRipples = [];
+const fireflyDefaults = {
+  ...gt,
+  density: 4,
+  speed: 3,
+  sway: 0.06,
+  spread: 0.10,
+  size: 0.85,
+  farthest: 0.20,
+  farBias: 2.0,
+  grip: 3.0,
+  separation: 110,
+  trail: 2.2,
+  trailFade: 0.6,
+  shimmer: 0.2,
+  sparkle: 0.15,
+  flashRate: 1.0,
+  synchrony: 0,
+  glowRadius: 1.3,
+  hoverPause: 1.2,
+  clickScatter: 1.0
+};
+const G_firefly = {
+  key: "fireflies",
+  label: "Firefly",
+  swatch: [225, 230, 55],
+  defaults: fireflyDefaults,
+  knobLimits: {
+    speed: { min: 0.5, max: 6, step: 0.1 },
+    density: { min: 0.5, max: 10, step: 0.1 }
+  },
+  controls: [
+    ["Bioluminescence", [
+      { key: "flashRate", label: "Flash rate", min: 0.2, max: 3, step: 0.05, hint: "How fast their bioluminescent lanterns cycle and pulse." },
+      { key: "glowRadius", label: "Glow radius", min: 0.2, max: 3, step: 0.05, hint: "Size and intensity of the ambient glowing light halo cast onto surrounding grid cells." },
+      { key: "hoverPause", label: "Hover pause", min: 0, max: 3, step: 0.05, hint: "How often and long fireflies pause in mid-air to hover while flashing." },
+      { key: "clickScatter", label: "Click scatter", min: 0, max: 3, step: 0.1, hint: "How strongly fireflies scatter and dart away when you tap or click (0 = calm, 3 = explosive panic)." }
+    ]]
+  ],
+  area: 24000,
+  scale: 0.35,
+  speed: 62,
+  max: 360,
+  trail: { light: [190, 180, 45], dark: [225, 240, 65] },
+  create: (t) => ({
+    ...t,
+    phase: F(0, B),
+    flash: 0,
+    hovering: false,
+    until: F(0, 1.5),
+    startledUntil: 0
+  }),
+  enter(t, flock) {
+    t.hovering = false;
+    t.until = flock.time + F(0.5, 2.0);
+    t.heading = flock.course;
+  },
+  update(t, flock, dt) {
+    const i = flock.tuning;
+    const now = flock.time;
+    const isStartled = now < t.startledUntil;
+
+    // 1. Reset per-creature force accumulator
+    const o = flock.begin();
+
+    // 2. Individual natural flash cycling (independent organic twinkling)
+    const omega = B * 0.85 * (i.flashRate || 1.0) * (0.9 + 0.2 * t.roll);
+    t.phase = (t.phase + dt * omega) % B;
+
+    // Flash intensity: smooth natural photinus pulse curve
+    const sPhase = Math.sin(t.phase);
+    const rawFlash = sPhase > 0.05 ? Math.pow((sPhase - 0.05) / 0.95, 1.8) : 0;
+    t.flash = isStartled ? Math.max(rawFlash, 0.95) : rawFlash;
+
+    // 3. Hover pause state machine
+    if (now >= t.until && !isStartled) {
+      t.hovering = !t.hovering;
+      if (t.hovering) {
+        t.until = now + F(0.6, 1.8) * (i.hoverPause ?? 1.2);
+      } else {
+        t.until = now + F(1.0, 3.0);
+      }
+    }
+
+    // 4. Movement, Course, Group Cohesion & Mouse Phototaxis
+    const a = flock.cruise(t);
+    const targetHeading = flock.heading + t.bias * (i.spread || 0);
+
+    if (isStartled) {
+      // Gentle scatter flit in opposite direction away from click
+      flock.steer(t, t.heading, a * 1.6, 5.0);
+    } else {
+      // High-performance flock cohesion: sample 14 neighbors evenly across swarm (prevents O(N^2) bottleneck)
+      let groupX = 0, groupY = 0, groupCount = 0;
+      const clen = flock.creatures.length;
+      const stride = Math.max(1, (clen / 14) | 0);
+      const startIdx = (t.id * 7) % clen;
+      for (let step = 0; step < 14; step++) {
+        const j = (startIdx + step * stride) % clen;
+        const other = flock.creatures[j];
+        if (other === t) continue;
+        const cdx = other.x - t.x, cdy = other.y - t.y;
+        const cd2 = cdx * cdx + cdy * cdy;
+        if (cd2 < 48400) { // within 220px
+          groupX += cdx;
+          groupY += cdy;
+          groupCount++;
+          if (groupCount >= 4) break;
+        }
+      }
+      if (groupCount > 0) {
+        o.x += (groupX / groupCount) * 0.32;
+        o.y += (groupY / groupCount) * 0.32;
+      }
+
+      // Check mouse pointer attraction (phototaxis with fast dist2 check)
+      let attracted = false;
+      if (fireflyMouse.active && (performance.now() - fireflyMouse.lastMove < 4000)) {
+        const mdx = fireflyMouse.x - t.x;
+        const mdy = fireflyMouse.y - t.y;
+        const md2 = mdx * mdx + mdy * mdy;
+        if (md2 < 144400) { // within 380px
+          attracted = true;
+          const mdist = Math.sqrt(md2);
+          const mAngle = Math.atan2(mdy, mdx);
+          if (mdist < 65) {
+            // Hover and softly orbit/sway around the cursor
+            const swirl = mAngle + Math.PI * 0.5 + Math.sin(now * 3 + t.id) * 0.4;
+            flock.steer(t, swirl, a * 0.35, 4.0);
+            o.x += Math.sin(now * 3.8 + t.id) * 22;
+            o.y += Math.cos(now * 3.2 + t.id * 1.4) * 22;
+          } else {
+            // Fly toward the mouse pointer
+            const pull = Math.min(1.0, (1 - mdist / 380) * 1.5);
+            const steerAngle = targetHeading * (1 - pull) + mAngle * pull;
+            flock.steer(t, steerAngle, a * (1 + pull * 0.4), 3.5);
+          }
+        }
+      }
+
+      if (!attracted) {
+        if (t.hovering) {
+          // Gentle hovering sway
+          o.x += Math.sin(now * 2.8 + t.id) * 16;
+          o.y += Math.cos(now * 2.2 + t.id * 1.6) * 18;
+          flock.steer(t, targetHeading, a * 0.25, 3.0);
+        } else {
+          // Normal cruising diagonal flutter from bottom-left to top-right
+          const flutter = Math.sin(now * 7 + t.id * 2.5) * 14;
+          o.x += -Math.sin(t.heading) * flutter;
+          o.y += Math.cos(t.heading) * flutter;
+          flock.steer(t, targetHeading, a * 1.05, i.grip || 3.0);
+        }
+      }
+    }
+
+    // 5. Separation
+    flock.separate(t, i.separation || 110, 0.35);
+
+    // 6. Movement integration
+    const maxSpd = a * (isStartled ? 2.0 : 1.4);
+    const spd = flock.move(t, dt, maxSpd);
+    flock.passed(t, 40) && flock.reenter(t);
+
+    // 7. Orientation banking along velocity/target
+    if (spd > 6) {
+      flock.face(t, dt, isStartled ? 10 : 5, isStartled ? t.heading : void 0);
+    }
+  },
+  startle(t, dx, dy, r, flock) {
+    const scatterMult = flock.tuning.clickScatter ?? 1.0;
+    if (scatterMult <= 0.01) return;
+    const scatterAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.25;
+    const scatterSpeed = (170 + 140 * r) * t.depth * scatterMult;
+    t.vx = Math.cos(scatterAngle) * scatterSpeed;
+    t.vy = Math.sin(scatterAngle) * scatterSpeed;
+    t.heading = scatterAngle;
+    t.hovering = false;
+    t.startledUntil = flock.time + 0.65 * Math.min(1.5, Math.max(0.3, scatterMult));
+    t.until = t.startledUntil + 0.5;
+    t.phase = Math.PI * 0.5; // Trigger bright flash burst
+    t.flash = 1.0;
+  },
+  draw(t, pen, flock) {
+    const i = flock.tuning;
+    const flash = t.flash || 0;
+    const depth = t.depth || 1;
+    const fog = (1 - depth) * (flock.tuning.fog ?? 0.75);
+    const cw = pen.cw || 12;
+    const ch = pen.ch || 18;
+    const isDark = pen.theme === "dark";
+
+    // 50/50 Yellow and Green Fireflies
+    const isYellow = (t.id % 2 === 0);
+
+    let bodyColor, headColor, lanternColor, lanternBg, haloColor, wingColor;
+    if (isYellow) {
+      if (isDark) {
+        bodyColor = [85, 75, 45];
+        headColor = [90, 80, 48];
+        lanternColor = [255, Math.round(210 + 45 * flash), Math.round(25 + 60 * (1 - flash))];
+        lanternBg = [Math.round(145 * flash + 35), Math.round(110 * flash + 25), 10];
+        haloColor = [255, 235, 60];
+        wingColor = [190, 185, 140];
+      } else {
+        bodyColor = [105, 90, 50];
+        headColor = [115, 98, 55];
+        lanternColor = [220, Math.round(165 + 50 * flash), 20];
+        lanternBg = [250, 238, 160];
+        haloColor = [225, 180, 30];
+        wingColor = [140, 130, 90];
+      }
+    } else {
+      if (isDark) {
+        bodyColor = [65, 82, 55];
+        headColor = [70, 88, 55];
+        lanternColor = [Math.round(180 + 75 * flash), 255, Math.round(55 * (1 - flash * 0.7))];
+        lanternBg = [Math.round(40 + 130 * flash), Math.round(65 + 175 * flash), Math.round(15 * (1 - flash))];
+        haloColor = [180, 250, 60];
+        wingColor = [165, 190, 155];
+      } else {
+        bodyColor = [75, 95, 60];
+        headColor = [85, 105, 65];
+        lanternColor = [Math.round(130 + 55 * flash), Math.round(195 + 30 * flash), 30];
+        lanternBg = [215, 240, 150];
+        haloColor = [140, 195, 30];
+        wingColor = [110, 140, 100];
+      }
+    }
+
+    // Depth LOD: Far-background fireflies render as a single twinkling dot for optical depth & high FPS
+    const isDistant = depth < 0.28;
+
+    if (isDistant) {
+      // Single glowing dot (lantern in the distance)
+      const lanternGlyph = flash > 0.45 ? "•" : "·";
+      pen.spot(t.x, t.y, lanternGlyph, lanternColor, lanternBg, fog);
+      if (flash > 0.3) {
+        pen.dot(t.x, t.y - ch, ".", haloColor, 1, Math.max(0, 1 - flash * 0.45 * depth));
+      }
+      return;
+    }
+
+    const cos = Math.cos(t.heading);
+    const sin = Math.sin(t.heading);
+    const nx = -sin, ny = cos;
+
+    // 1. Thorax / Body: center cell
+    pen.dot(t.x, t.y, "o", bodyColor, 1, fog + 0.06);
+
+    // 2. Head: tiny dot in front along heading
+    const headX = t.x + cos * (cw * 0.85);
+    const headY = t.y + sin * (ch * 0.85);
+    pen.dot(headX, headY, "·", headColor, 1, fog + 0.12);
+
+    // 3. Subtle micro-wings on sides (delicate flutter)
+    const flap = Math.sin(flock.time * 24 + t.id * 3);
+    const wingL = flap > 0 ? "\\" : "-";
+    const wingR = flap > 0 ? "/" : "-";
+    pen.dot(t.x + nx * (cw * 0.78), t.y + ny * (ch * 0.65), wingL, wingColor, 1, fog + 0.38);
+    pen.dot(t.x - nx * (cw * 0.78), t.y - ny * (ch * 0.65), wingR, wingColor, 1, fog + 0.38);
+
+    // 4. Lantern: glowing cell at rear abdomen
+    const lx = t.x - cos * (cw * 0.8);
+    const ly = t.y - sin * (ch * 0.8);
+    const lanternGlyph = flash > 0.45 ? "●" : (flash > 0.18 ? "•" : "·");
+    pen.spot(lx, ly, lanternGlyph, lanternColor, lanternBg, fog);
+
+    // 5. Noticeable External Bioluminescent Light Halo around lantern
+    if (flash > 0.15) {
+      const haloPower = flash * (i.glowRadius ?? 1.3) * depth;
+
+      // Radius 1: 4 orthogonal neighboring cells
+      const r1 = [
+        [-cw, 0], [cw, 0], [0, -ch], [0, ch]
+      ];
+      for (let j = 0; j < r1.length; j++) {
+        const fog1 = Math.max(0, 1 - haloPower * 0.85);
+        if (fog1 < 0.96) {
+          pen.dot(lx + r1[j][0], ly + r1[j][1], flash > 0.65 ? "·" : ".", haloColor, 1, fog1);
+        }
+      }
+
+      // Radius 2: Diagonal and wider cells for bright foreground flashes
+      if (depth > 0.65 && flash > 0.55 && haloPower > 0.5) {
+        const r2 = [
+          [-cw, -ch], [cw, -ch], [-cw, ch], [cw, ch],
+          [-cw * 2, 0], [cw * 2, 0], [0, -ch * 2], [0, ch * 2]
+        ];
+        for (let j = 0; j < r2.length; j++) {
+          const fog2 = Math.max(0, 1 - haloPower * 0.42);
+          if (fog2 < 0.96) {
+            pen.dot(lx + r2[j][0], ly + r2[j][1], ".", haloColor, 1, fog2);
+          }
+        }
+      }
+
+      // Trail energy
+      if (flash > 0.3 && depth > 0.4) {
+        pen.shed(lx, ly, flash * 0.45 * depth);
+      }
+    }
+  },
+  prepare(flock, dt) {
+    const now = flock.time;
+    for (let i = fireflyRipples.length - 1; i >= 0; i--) {
+      if (now - fireflyRipples[i].born > fireflyRipples[i].duration || Math.abs(now - fireflyRipples[i].born) > 30) {
+        fireflyRipples.splice(i, 1);
+      }
+    }
+  },
+  tap(x, y, flock) {
+    fireflyRipples.push({
+      x,
+      y,
+      born: flock.time,
+      duration: 1.8,
+      maxRadius: 260
+    });
+    if (fireflyRipples.length > 8) fireflyRipples.splice(0, fireflyRipples.length - 8);
+
+    const scatterMult = flock.tuning.clickScatter ?? 1.0;
+    if (scatterMult <= 0.01) return;
+
+    // Scatter nearby fireflies in opposite direction (scales with Click Scatter slider)
+    const scareRadius = 210 * Math.min(1.6, Math.max(0.4, scatterMult));
+    for (const c of flock.creatures) {
+      const dx = c.x - x, dy = c.y - y, dist = Math.hypot(dx, dy) || 1;
+      if (dist > scareRadius) continue;
+      const r = 1 - dist / scareRadius;
+      G_firefly.startle(c, dx / dist, dy / dist, r, flock);
+    }
+  },
+  drawAll(flock, pen) {
+    const now = flock.time;
+    const rippleColor = pen.theme === "dark" ? [235, 245, 90] : [160, 185, 40];
+    const cw = pen.cw || 12;
+    const waveSpeed = 140;
+    const offsets = [0, 0.18, 0.36];
+
+    for (let ri = 0; ri < fireflyRipples.length; ri++) {
+      const rip = fireflyRipples[ri];
+      const age = now - rip.born;
+      if (age < 0 || age > rip.duration) continue;
+
+      for (let wi = 0; wi < offsets.length; wi++) {
+        const wAge = age - offsets[wi];
+        if (wAge <= 0) continue;
+        const r = wAge * waveSpeed;
+        if (r > rip.maxRadius) continue;
+
+        const life = wAge / rip.duration;
+        const easeIn = Math.min(1.0, wAge / 0.12);
+        const decay = Math.pow(1 - life, 2.2);
+        const amp = easeIn * decay * (1 - wi * 0.2);
+        if (amp <= 0.02) continue;
+        const fog = Math.max(0.0, 1 - amp * 1.05);
+
+        if (r < 8) {
+          pen.dot(rip.x - r, rip.y, "·", rippleColor, 1, fog);
+          pen.dot(rip.x + r, rip.y, "·", rippleColor, 1, fog);
+          pen.dot(rip.x, rip.y - r * 0.75, "·", rippleColor, 1, fog);
+          pen.dot(rip.x, rip.y + r * 0.75, "·", rippleColor, 1, fog);
+        } else {
+          const count = Math.max(8, Math.floor((2 * Math.PI * r) / (cw * 1.3)));
+          for (let k = 0; k < count; k++) {
+            const theta = (k / count) * Math.PI * 2;
+            const px = rip.x + Math.cos(theta) * r;
+            const py = rip.y + Math.sin(theta) * (r * 0.75);
+            const glyph = (k % 3 === 0) ? "*" : (k % 2 === 0 ? "·" : ".");
+            pen.dot(px, py, glyph, rippleColor, 1, fog);
+          }
+        }
+      }
+    }
+
+    for (const c of flock.creatures) {
+      G_firefly.draw(c, pen, flock);
+    }
+  }
+};
+const ct={butterflies:gs,koi:Jn,jellyfish:Nn,dragonflies:rn,frogs:En,cranes:Rs,crabs:vs,turtles:G_turtle,fireflies:G_firefly},jn=(()=>{let o=Object.keys(ct);try{const s=localStorage.getItem("ascii-animals:animal-order");if(s){const p=JSON.parse(s);if(Array.isArray(p)&&p.length){const v=p.filter(k=>k in ct),r=o.filter(k=>!v.includes(k));o=[...v,...r]}}}catch(e){}return o})(),Pt=1/60,We=t=>typeof t=="string"?ct[t]:t,_e=4;class ti{constructor(e,{animal:s="butterflies",count:i,theme:n="light",tuning:a}={}){S(this,"tuning");S(this,"animal");S(this,"flock");S(this,"renderer");S(this,"count");S(this,"raf",0);S(this,"last",0);S(this,"acc",0);S(this,"visible",!0);S(this,"reducedMotion");S(this,"resizeObserver");S(this,"intersectionObserver");S(this,"disposed",!1);S(this,"frame",e=>{this.raf=requestAnimationFrame(this.frame);const mf=this.tuning.fps||60,mi=1e3/mf;if(e-this.last<mi-1)return;const s=Math.min(.1,(e-this.last)/1e3);this.last=e,this.acc+=s;let i=0;for(;this.acc>=Pt&&i<_e;)this.flock.step(Pt),this.acc-=Pt,i++;i===_e&&(this.acc=0),this.renderer.render(this.flock,s)});S(this,"onMotionPreference",()=>{this.reducedMotion.matches?(cancelAnimationFrame(this.raf),this.drawStill()):this.schedule()});S(this,"onPointerDown",e=>{if(this.reducedMotion.matches||e.target!==this.canvas)return;const s=this.canvas.getBoundingClientRect();this.flock.startle(e.clientX-s.left,e.clientY-s.top)});var o;this.canvas=e,this.count=i,this.animal=We(s),this.tuning={...this.animal.defaults,...a},this.flock=new ge(this.animal,this.tuning,i),this.renderer=new qs(e,this.tuning),this.renderer.setFontFamily(getComputedStyle(e).fontFamily),this.renderer.setAnimal(this.animal,this.tuning),this.renderer.setTheme(n),this.reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)"),this.resizeObserver=new ResizeObserver(()=>this.resize()),this.resizeObserver.observe(e),this.intersectionObserver=new IntersectionObserver(([r])=>{this.visible=r.isIntersecting,this.schedule()}),this.intersectionObserver.observe(e),document.addEventListener("visibilitychange",()=>{document.hidden?(cancelAnimationFrame(this.raf),this.visible=!1):(this.visible=!0,this.schedule())}),this.reducedMotion.addEventListener("change",this.onMotionPreference),window.addEventListener("pointerdown",this.onPointerDown,{passive:!0}),this.resize(),(o=document.fonts)==null||o.load(`600 16px ${getComputedStyle(e).fontFamily}`).then(()=>{!this.disposed&&this.reducedMotion.matches&&this.drawStill()}),this.schedule()}destroy(){this.disposed=!0,cancelAnimationFrame(this.raf),this.resizeObserver.disconnect(),this.intersectionObserver.disconnect(),this.reducedMotion.removeEventListener("change",this.onMotionPreference),window.removeEventListener("pointerdown",this.onPointerDown)}setAnimal(e,s){this.animal=We(e),this.tuning={...this.animal.defaults,...s},this.flock=new ge(this.animal,this.tuning,this.count),this.renderer.setAnimal(this.animal,this.tuning),this.resize()}set(e,s){this.tuning[e]=s,e==="detail"?this.resize():(e==="hueShift"||e==="grid")&&this.renderer.restyle(),this.reducedMotion.matches&&this.drawStill()}setTheme(e){this.renderer.setTheme(e),this.reducedMotion.matches&&this.drawStill()}resize(){const e=this.canvas.getBoundingClientRect();if(e.width<1||e.height<1)return;const s=Math.min(window.devicePixelRatio||1,2);this.renderer.resize(e.width,e.height,s),this.flock.resize(e.width,e.height),this.reducedMotion.matches&&this.drawStill()}schedule(){cancelAnimationFrame(this.raf),!(this.disposed||!this.visible||this.reducedMotion.matches)&&(this.last=performance.now(),this.raf=requestAnimationFrame(this.frame))}drawStill(){if(this.flock.time<4)for(let e=0;e<240;e++)this.flock.step(Pt);this.renderer.render(this.flock,Pt)}}function ei(t,e=new Date){const s=e.getHours();return s>=5&&s<12?`Good morning, ${t}`:s>=12&&s<17?`Good afternoon, ${t}`:s>=17&&s<22?`Good evening, ${t}`:`Still up, ${t}?`}function si(t){const e=document.querySelector(".greeting");if(!e)return;const s=()=>e.textContent=ei(t);s(),setInterval(s,6e4)}function ni(){const t=document.querySelector(".composer"),e=t.querySelector("textarea"),s=t.querySelector(".send");function i(){e.style.height="auto",e.style.height=`${e.scrollHeight}px`,e.style.overflowY=e.scrollHeight>e.clientHeight+1?"auto":"hidden",s.disabled=e.value.trim()===""}e.addEventListener("input",i),matchMedia("(hover: hover) and (pointer: fine)").matches&&e.focus({preventScroll:!0}),e.addEventListener("keydown",n=>{n.key==="Enter"&&!n.shiftKey&&!n.isComposing&&(n.preventDefault(),t.requestSubmit())}),t.addEventListener("submit",n=>{n.preventDefault();const a=e.value.trim();a&&(t.dispatchEvent(new CustomEvent("chat:submit",{detail:{text:a}})),e.value="",i())})}function ii(t,e,s,i){var h;const n=document.createElement("span");n.className="thumb",n.setAttribute("aria-hidden","true"),t.append(n);let _dragBtn=null,_didDrag=!1;const a=e.map(l=>{const c=document.createElement("button");c.type="button",c.setAttribute("role","radio"),c.setAttribute("draggable","true"),c.dataset.value=l.value;const d=l.swatch?`<span class="dot" style="--swatch: ${l.swatch}" aria-hidden="true"></span>`:"";c.innerHTML=`${d}<span>${l.label}</span>`;c.addEventListener("click",()=>{_didDrag?(_didDrag=!1):r(l.value,!0)});c.addEventListener("dragstart",ev=>{_dragBtn=c,_didDrag=!1,c.classList.add("dragging"),ev.dataTransfer&&(ev.dataTransfer.effectAllowed="move",ev.dataTransfer.setData("text/plain",l.value))});c.addEventListener("dragover",ev=>{ev.preventDefault(),ev.dataTransfer&&(ev.dataTransfer.dropEffect="move");if(!_dragBtn||_dragBtn===c)return;_didDrag=!0;const rect=c.getBoundingClientRect();ev.clientX<rect.left+rect.width/2?t.insertBefore(_dragBtn,c):t.insertBefore(_dragBtn,c.nextSibling);o()});c.addEventListener("dragend",()=>{_dragBtn&&(_dragBtn.classList.remove("dragging"),_dragBtn=null);const nbs=Array.from(t.querySelectorAll('button[role="radio"]'));a.splice(0,a.length,...nbs);const no=nbs.map(b=>b.dataset.value);try{localStorage.setItem("ascii-animals:animal-order",JSON.stringify(no));typeof chrome!=="undefined"&&chrome.storage&&chrome.storage.local&&chrome.storage.local.set({"ascii-animals:animal-order":JSON.stringify(no)})}catch(err){}o();setTimeout(()=>{_didDrag=!1},120)});t.append(c);return c});const topBar=t.closest(".top-bar")||t.parentElement;if(topBar&&!topBar.querySelector(".modes-tip")){const tip=document.createElement("div");tip.className="modes-tip",tip.textContent="Hold and drag to reorder modes",tip.setAttribute("aria-hidden","true"),topBar.append(tip)}function o(){const l=a.find(c=>c.getAttribute("aria-checked")==="true");l&&(n.style.translate=`${l.offsetLeft}px 0`,n.style.width=`${l.offsetWidth}px`)}function r(l,c){for(const d of a){const u=d.dataset.value===l;d.setAttribute("aria-checked",String(u)),d.tabIndex=u?0:-1,u&&d.scrollIntoView({block:"nearest",inline:"nearest"})}o(),c&&i(l)}t.addEventListener("keydown",l=>{const c=a.indexOf(document.activeElement);if(c<0||l.key!=="ArrowRight"&&l.key!=="ArrowLeft")return;l.preventDefault();const d=a[(c+(l.key==="ArrowRight"?1:-1)+a.length)%a.length];d.focus(),r(d.dataset.value,!0)}),r(s,!1),(h=document.fonts)==null||h.ready.then(o),window.addEventListener("resize",o)}const le="ascii-animals:",re=new URLSearchParams(location.search),ai=Number(re.get("count"))||void 0,Ue=t=>t!==null&&t in ct;let he=null;try{he=localStorage.getItem(le+"animal")}catch{}let tt=Ue(re.get("animal"))?re.get("animal"):Ue(he)?he:"butterflies";const Gt=new ti(document.querySelector("canvas"),{animal:tt,count:ai,theme:"dark"}),ce=t=>`${le}tweaks:${t}`;function Qe(t){const e=ct[t],s=new Set(e.hide??[]);return i=>{const n=o=>{if("toggle"in o)return i.toggle(o.key,o.label,o.hint);const min=(e.knobLimits&&e.knobLimits[o.key]?.min)??o.min,max=(e.knobLimits&&e.knobLimits[o.key]?.max)??o.max,step=(e.knobLimits&&e.knobLimits[o.key]?.step)??o.step,r=i.knob(o.key,o.label,min,max,step,o.hint),h=o.disabledWhen;return h?{...r,disabled:()=>!!Gt.tuning[h]}:r},a=o=>o.filter(r=>!s.has(r.key)).map(n);return[["General",[i.knob("fps","Max FPS",30,144,5,"Target frame rate limit (default 60). Set to 60 or 120+ for high-refresh screens, or lower to save battery."),i.choice("Clock",[{label:"12 hr",value:"12"},{label:"24 hr",value:"24"}],"Choose between a 12 hour clock format or 24 hour clock format(or just simply click on the clock to do so)")]],["Movement",a(ue.movement)],...e.controls.map(([o,r])=>[o,r.map(n)]),["Look",a(ue.look.filter(r=>r.key!=="fps"))]]}}let Ge=qe(Gt,ct[tt].defaults,Qe(tt),{storageKey:ce(tt)});window.addEventListener("storage",t=>{t.key===ce(tt)&&location.reload()});ii(document.querySelector(".choices"),jn.map(t=>({value:t,label:ct[t].label,swatch:`rgb(${ct[t].swatch.join(",")})`})),tt,t=>{tt=t,Gt.setAnimal(tt),Ge.destroy(),Ge=qe(Gt,ct[tt].defaults,Qe(tt),{storageKey:ce(tt)});try{localStorage.setItem(le+"animal",tt)}catch{}});ni();si(localStorage.getItem("ascii-animals:name")||"ekaansh");

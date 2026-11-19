@@ -35,7 +35,7 @@ ASCII Animals blends retro terminal ASCII art with modern liquid-glass design. W
 
 ✨ KEY FEATURES:
 
-🐢 8 Living ASCII Species:
+✨ 9 Living ASCII Species:
 • Sea Turtle (Step 4 amber-gold mosaic carapace and flipper physics)
 • Koi (lazy S-curve schooling with interactive feeding ripples)
 • Butterflies (erratic flutter and wing-folded glides)
@@ -44,6 +44,7 @@ ASCII Animals blends retro terminal ASCII art with modern liquid-glass design. W
 • Frogs (anticipation squats and arched leaps)
 • Cranes (synchronized graceful flapping and gliding)
 • Crabs (lateral scuttling, claw snaps, and startled retreats)
+• Fireflies (50/50 golden-yellow & neon lime bioluminescent night swarm, mouse phototaxis, water ripples, depth bokeh dots, and adjustable click scatter)
 
 ⏱️ Vertical Scroll Odometer Clock:
 • Bold, luminous typography matching high-end minimalist design.
