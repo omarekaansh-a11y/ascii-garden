@@ -216,25 +216,49 @@
   function executeSearch(raw, files = []) {
     let query = (raw || '').trim();
 
-    // If files are attached, synthesize query with file context and copy image to clipboard
+    // If an image or screenshot is attached, use native Google Lens upload (Chrome native feature)
+    const imageFile = files.find(f => f.type.startsWith('image/'));
+    if (imageFile) {
+      if (query && navigator.clipboard) {
+        try { navigator.clipboard.writeText(query).catch(() => {}); } catch (e) {}
+      }
+
+      // Native form POST to Google Lens v3 upload endpoint (same as Chrome search bar)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://lens.google.com/v3/upload';
+      form.enctype = 'multipart/form-data';
+      form.style.display = 'none';
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.name = 'encoded_image';
+
+      const dt = new DataTransfer();
+      dt.items.add(imageFile);
+      fileInput.files = dt.files;
+      form.appendChild(fileInput);
+
+      if (query) {
+        const textInput = document.createElement('input');
+        textInput.type = 'hidden';
+        textInput.name = 'ep';
+        textInput.value = 'subb';
+        form.appendChild(textInput);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+      return;
+    }
+
+    // For non-image files, synthesize query with file context
     if (files.length > 0) {
       const fileNames = files.map(f => f.name).join(' ');
       if (!query) {
         query = fileNames;
       } else if (!query.toLowerCase().includes(fileNames.toLowerCase())) {
         query = `${query} ${fileNames}`;
-      }
-
-      // Copy image to clipboard if possible for instant pasting into AI chat
-      if (navigator.clipboard) {
-        try {
-          const first = files[0];
-          if (first && first.type.startsWith('image/')) {
-            navigator.clipboard.write([
-              new ClipboardItem({ [first.type]: first })
-            ]).catch(() => {});
-          }
-        } catch (e) {}
       }
     }
 
