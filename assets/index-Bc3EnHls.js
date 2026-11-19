@@ -42,7 +42,7 @@ const G_turtle = {
   scale: 1.35,
   speed: 46,
   trail: { light: [140, 115, 60], dark: [210, 180, 95] },
-  create: (t) => ({ ...t, phase: F(0, B), stroke: 0, startledUntil: 0, fleeDir: 0, fleeSpeed: 0, fleeFrom: 0 }),
+  create: (t) => ({ ...t, phase: F(0, B), stroke: 0, startledUntil: 0 }),
   update(t, e, s) {
     const i = e.tuning;
     const now = e.time;
@@ -55,28 +55,17 @@ const G_turtle = {
     const rate = (i.paddleRate || 1) * (isStartled ? 1.8 : 1);
     t.phase += s * 2.8 * rate;
     const stroke = Math.sin(t.phase);
-    const power = isStartled ? 2.2 : 1;
+    const power = isStartled ? 2.4 : 1;
     const surge = Math.max(0, stroke) * 26 * (i.speed || 1) * power;
     o.x += Math.cos(t.heading) * surge;
     o.y += Math.sin(t.heading) * surge;
 
-    // 3. Steering & target velocity
+    // 3. Steering along course / swimming path (like jellyfish)
     const a = e.cruise(t);
     const sway = Math.sin(t.phase) * 0.035;
-    const normalHeading = e.heading + t.bias * (i.spread || 0) + sway;
-
-    let targetHeading = normalHeading;
-    let targetSpeed = a;
-    let grip = i.grip || 1.8;
-
-    if (isStartled) {
-      const elapsed = now - (t.fleeFrom || (now - 0.1));
-      const totalDur = Math.max(0.1, t.startledUntil - (t.fleeFrom || (now - 0.1)));
-      const decay = Math.max(0, 1 - (elapsed / totalDur));
-      targetHeading = t.fleeDir;
-      targetSpeed = a + ((t.fleeSpeed || (a * 2)) - a) * (decay * decay);
-      grip = (i.grip || 1.8) * 1.5;
-    }
+    const targetHeading = e.heading + t.bias * (i.spread || 0) + sway;
+    const targetSpeed = a * (isStartled ? 2.2 : 1);
+    const grip = (i.grip || 1.8);
 
     e.steer(t, targetHeading, targetSpeed, grip);
 
@@ -84,26 +73,22 @@ const G_turtle = {
     e.separate(t, i.separation || 450, 0.45);
 
     // 5. Integrate motion with speed limits
-    const maxSpd = isStartled ? Math.max(a * 2.2, t.fleeSpeed || (a * 2.2)) : a * 1.8;
+    const maxSpd = a * (isStartled ? 2.5 : 1.8);
     const spd = e.move(t, s, maxSpd);
     e.passed(t, t.span * 1.5) && e.reenter(t);
 
-    // 6. Smooth directional banking (prevents jitter / vibration and gives natural swimming turn)
+    // 6. Smooth directional banking along trajectory
     if (spd > 6) {
-      const turnRate = isStartled ? 4.5 : 2.5;
-      e.face(t, s, turnRate);
+      e.face(t, s, isStartled ? 4.5 : 2.5, targetHeading);
     }
   },
   startle(t, e, s, i, n) {
     t.phase = Math.floor(t.phase / B) * B + Math.PI * 0.5;
-    const scare = 1 + 1.2 * i;
-    t.fleeDir = Math.atan2(s, e) + F(-0.15, 0.15);
-    t.fleeSpeed = n.cruise(t) * (2.0 + 1.4 * i);
-    t.fleeFrom = n.time;
-    t.startledUntil = n.time + 1.1 * scare;
-    const impulse = 180 * i * t.depth;
-    t.vx += Math.cos(t.fleeDir) * impulse;
-    t.vy += Math.sin(t.fleeDir) * impulse;
+    const a = 240 * i * t.depth;
+    // Surge forward along swimming path (like jellyfish)
+    t.vx += Math.cos(t.heading) * a;
+    t.vy += Math.sin(t.heading) * a;
+    t.startledUntil = n.time + 1.0;
   },
   draw(t, e, s) {
     const i = s.tuning;
@@ -187,7 +172,7 @@ const G_turtle = {
       x,
       y,
       born: flock.time,
-      duration: 1.85,
+      duration: 2.0,
       maxRadius: 240
     });
     if (turtleRipples.length > 8) turtleRipples.splice(0, turtleRipples.length - 8);
@@ -203,35 +188,49 @@ const G_turtle = {
     const now = flock.time;
     const rippleColor = pen.theme === "dark" ? [105, 215, 235] : [65, 145, 175];
     const cw = pen.cw || 12;
+    const waveSpeed = 125;
+    const offsets = [0, 0.22, 0.44];
 
     for (let ri = 0; ri < turtleRipples.length; ri++) {
       const rip = turtleRipples[ri];
       const elapsed = now - rip.born;
-      const progress = elapsed / rip.duration;
-      if (progress < 0 || progress >= 1) continue;
+      if (elapsed < 0 || elapsed > rip.duration) continue;
 
-      const waves = [
-        { r: progress * rip.maxRadius, strength: 1.0 },
-        { r: Math.max(0, (progress - 0.14) * rip.maxRadius * 1.08), strength: 0.72 },
-        { r: Math.max(0, (progress - 0.28) * rip.maxRadius * 1.15), strength: 0.42 }
-      ];
+      // 1. Central impact droplet right at origin (first 0.22s)
+      if (elapsed < 0.22) {
+        const centerAmp = Math.sin((elapsed / 0.22) * Math.PI);
+        const fog = Math.max(0.08, 1 - centerAmp * 0.88);
+        pen.dot(rip.x, rip.y, "·", rippleColor, 1, fog);
+      }
 
-      for (let wi = 0; wi < waves.length; wi++) {
-        const w = waves[wi];
-        if (w.r < 5) continue;
-        const count = Math.max(8, Math.floor((2 * Math.PI * w.r) / (cw * 2.2)));
-        const waveProgress = Math.min(1, Math.max(0, w.r / rip.maxRadius));
-        const alpha = Math.sin(waveProgress * Math.PI) * w.strength;
-        if (alpha <= 0.02) continue;
-        const fog = Math.max(0.08, 1 - alpha * 0.76);
+      // 2. Concentric water rings originating directly from center
+      for (let wi = 0; wi < offsets.length; wi++) {
+        const waveAge = elapsed - offsets[wi];
+        if (waveAge <= 0) continue;
+        const r = waveAge * waveSpeed;
+        if (r > rip.maxRadius) continue;
 
-        for (let k = 0; k < count; k++) {
-          const theta = (k / count) * Math.PI * 2;
-          const px = rip.x + Math.cos(theta) * w.r;
-          const py = rip.y + Math.sin(theta) * (w.r * 0.72);
-          const sinT = Math.abs(Math.sin(theta));
-          const glyph = sinT < 0.38 ? "~" : (Math.abs(Math.cos(theta)) < 0.38 ? (k % 2 === 0 ? "-" : "~") : (k % 2 === 0 ? "·" : "."));
-          pen.dot(px, py, glyph, rippleColor, 1, fog);
+        const decay = Math.pow(Math.max(0, 1 - r / rip.maxRadius), 1.25);
+        const easeIn = Math.min(1, waveAge / 0.05);
+        const amp = easeIn * decay * (1 - wi * 0.22);
+        if (amp <= 0.02) continue;
+        const fog = Math.max(0.08, 1 - amp * 0.78);
+
+        if (r < 6) {
+          pen.dot(rip.x - r, rip.y, "·", rippleColor, 1, fog);
+          pen.dot(rip.x + r, rip.y, "·", rippleColor, 1, fog);
+          pen.dot(rip.x, rip.y - r * 0.72, "·", rippleColor, 1, fog);
+          pen.dot(rip.x, rip.y + r * 0.72, "·", rippleColor, 1, fog);
+        } else {
+          const count = Math.max(6, Math.floor((2 * Math.PI * r) / (cw * 1.8)));
+          for (let k = 0; k < count; k++) {
+            const theta = (k / count) * Math.PI * 2;
+            const px = rip.x + Math.cos(theta) * r;
+            const py = rip.y + Math.sin(theta) * (r * 0.72);
+            const sinT = Math.abs(Math.sin(theta));
+            const glyph = sinT < 0.38 ? "~" : (Math.abs(Math.cos(theta)) < 0.38 ? (k % 2 === 0 ? "-" : "~") : (k % 2 === 0 ? "·" : "."));
+            pen.dot(px, py, glyph, rippleColor, 1, fog);
+          }
         }
       }
     }
