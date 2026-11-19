@@ -744,6 +744,14 @@
       });
     }
 
+    if (voiceOverlay) {
+      voiceOverlay.addEventListener('click', (e) => {
+        if (e.target === voiceOverlay) {
+          closeVoiceOverlay();
+        }
+      });
+    }
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && voiceOverlay && !voiceOverlay.hidden) {
         closeVoiceOverlay();
