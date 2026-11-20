@@ -11,10 +11,10 @@ Pick one from the row of animals in the top bar. Dark mode only, and each animal
 | Jellyfish | bioluminescent magenta: each pulse lights the bell up, then the glow eases out; frilly twisting arms, marine snow (made for dark mode) |
 | Dragonfly | emerald hawkers: hover, dart, cruise along for a while; white eyes with black pupils on the nearer ones, a striped green thorax, a dark body banded emerald, clear veined wings with a sweeping glint (made for dark mode) |
 | Frog | spotted leopard frogs that sit, breathe and blink, then leap in an arc (bigger at the top), with a splash on landing |
-| Crane | red-crowned, after the paintings: each flies its own way along the course, flapping at its own pace and gliding now and then (Folding flap in Tweaks for a slow downstroke and a quick, wrist-folding upstroke); broad white wings with splayed fingers and black secondaries, a red crown, dark eyes on the nearer ones |
+| Crane | red-crowned, after the paintings: each flies its own way along the course, flapping at its own pace and gliding now and then ; broad white wings with splayed fingers and black secondaries, a red crown, dark eyes on the nearer ones |
 | Crab | scuttle sideways in bursts, legs stepping, footprints in the sand; tap and they bolt away, claws up |
-| Sea Turtle | green sea turtles: rhythmic paddle strokes on broad front flippers and long graceful glides; rich amber-gold and olive mosaic shell (carapace) with distinct scute tiles and radiating patterns; tap and they bank into a startled turn |
-| Firefly | bioluminescent night swarm: dark bronze and olive chitin with fluttering micro-wings and luminous lanterns glowing in 50/50 warm golden-yellow and neon chartreuse-green with ambient light halos; distant fireflies naturally render as single twinkling bokeh dots based on Far bias; organic flock cohesion and hover-drifting; phototaxis gently draws them toward your mouse cursor across open canvas (staying clear of the search bar and tweaks drawer); tap to emit water ripples and scatter fireflies in the opposite direction (adjustable via Click scatter) |
+| Sea Turtle | green sea turtles: rhythmic paddle strokes on broad front flippers and long graceful glides; rich amber-gold and olive mosaic shell (carapace) with distinct scute tiles and radiating patterns in herds|
+| Firefly | bioluminescent night swarm: dark bronze and olive chitin with fluttering micro-wings and luminous lanterns glowing inwarm golden-yellow and neon chartreuse-green; organic flock cohesion and hover-drifting; bring your cursor near them & they flock towards it as if a source of light!|
 
 Everywhere:
 
@@ -22,15 +22,23 @@ Everywhere:
 - whoever leaves downstream comes back in upstream
 - **click** to startle the ones nearby (each animal reacts its own way)
 - the last animal picked is remembered between visits
-- a **vertical scroll odometer clock** resting above the greeting:
-  crisp, luminous tabular numbers that roll smoothly down from the top like a physical odometer wheel as minutes change; click the clock anytime (or toggle in Tweaks) to switch between 12-hour (with AM/PM) and 24-hour mode
-- a greeting by the time of day ("Good morning, ekaansh!" or "Still up, ekaansh?" after 10pm) resting below the clock; double-click the name anytime to change it
+- a **vertically scrolling odometer clock** resting above the greeting:
+  crisp, luminous tabular numbers that roll smoothly down from the top like a physical odometer wheel as minutes change; click the clock anytime (or toggle in Tweaks) to switch between 12-hour and 24-hour mode
+- a greeting by the time of day ("Good morning, [username]!", "Still up, [username]?", "Good evening, [username].) resting below the clock; double-click the name anytime to change it
 - a liquid-glass search composer in the middle:
-  search query input using your browser's default search engine or direct URL navigation, "Add tabs or files", voice input, and search execution; the refraction uses an SVG filter in Chromium and falls back to frosted glass elsewhere
+  search query input using your browser's default search engine or direct URL navigation, "Add tabs or files", voice input, and search execution; 
 - a frosted-glass **bookmarks bar** at the top:
   shows your browser's bookmarks and nested folders with dynamic favicons and an overflow menu
 - a **Tweaks** panel (top right):
-  **General** settings at the very top with a Max FPS limit slider (30 to 144 FPS) and 12h / 24h Clock format choices, followed by shared Movement and Look sliders plus each animal's own, saved per animal; values slide with tabular numbers; double-click a label to reset it, **Copy** exports what you changed as JSON
+  1. General settings at the very top with a Max FPS limit slider (30-144 FPS), and 12h / 24h Clock format choices.
+  2. followed by intricate Movement and behavior settings of each individual animal mode, bring able to customise every single parameter defining & controlling it. 
+  3. followed by a Looks group controlling the foundation elements of the extension which affects every other component universally through every mode.
+  4. and lastly, a Search box group controlling the size, tint, refraction, etc. of the search box
+
+double-click a label to reset it
+Looks and Search Box settings stay consistent throughout all modes
+last selected mode is remembered 
+
 - **zero battery drain**: rendering automatically suspends when switching to another tab, dropping CPU & GPU usage to 0%
 
 ## Install as a Chrome Extension
