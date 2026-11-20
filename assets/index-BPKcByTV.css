@@ -4,7 +4,13 @@
 .bookmarks-bar{position:fixed;top:0;left:0;right:0;height:36px;padding:0 14px;display:flex;align-items:center;gap:4px;z-index:28;border-top:none;border-left:none;border-right:none;border-radius:0;--blur:8px}
 .top-bar{top:48px !important}
 .tweaks-open{top:46px !important}
-.tweaks{top:46px !important}
+.tweaks{top:46px !important;bottom:16px !important;max-height:calc(100vh - 62px) !important;border-radius:20px !important;overflow:hidden !important;display:flex !important;flex-direction:column !important}
+.tweaks-foot{display:flex;align-items:center;justify-content:center;padding:10px 16px;border-top:1px solid var(--chip-edge);border-bottom-left-radius:20px;border-bottom-right-radius:20px;flex-shrink:0;user-select:none;background:rgba(255,255,255,0.015)}
+.tweaks-foot-credit{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Geist',system-ui,sans-serif;font-size:11px;font-weight:450;letter-spacing:0.02em;color:rgba(255,255,255,0.48);text-shadow:0 1px 4px rgba(0,0,0,0.5);transition:color 0.2s ease}
+.tweaks-foot-credit:hover{color:rgba(255,255,255,0.85)}
+[data-theme=light] .tweaks-foot{background:rgba(0,0,0,0.015)}
+[data-theme=light] .tweaks-foot-credit{color:rgba(27,31,48,0.45);text-shadow:0 1px 2px rgba(255,255,255,0.6)}
+[data-theme=light] .tweaks-foot-credit:hover{color:rgba(27,31,48,0.8)}
 .bm-list{display:flex;align-items:center;gap:3px;overflow:hidden;flex:1;min-width:0}
 .bm-item{flex:none;display:inline-flex;align-items:center;gap:7px;height:26px;max-width:170px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--text-soft);text-decoration:none;white-space:nowrap;cursor:pointer;font-size:12.5px;font-family:inherit;font-weight:450;transition:background .2s,color .2s}
 .bm-item:hover,.bm-item:focus-visible,.bm-item.open{background:rgba(255,255,255,.09);color:var(--text);outline:none}
