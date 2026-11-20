@@ -30,10 +30,10 @@ Everywhere:
 - a frosted-glass **bookmarks bar** at the top:
   shows your browser's bookmarks and nested folders with dynamic favicons and an overflow menu
 - a **Tweaks** panel (top right):
-  1. General settings at the very top with a Max FPS limit slider (30-144 FPS), and 12h / 24h Clock format choices.
-  2. followed by intricate Movement and behavior settings of each individual animal mode, bring able to customise every single parameter defining & controlling it. 
-  3. followed by a Looks group controlling the foundation elements of the extension which affects every other component universally through every mode.
-  4. and lastly, a Search box group controlling the size, tint, refraction, etc. of the search box
+1. General settings at the very top with a Max FPS limit slider (30-144 FPS), and 12h / 24h Clock format choices.
+2. followed by intricate Movement and behavior settings of each individual animal mode, bring able to customise every single parameter defining & controlling it. 
+3. followed by a Looks group controlling the foundation elements of the extension which affects every other component universally through every mode.
+4. and lastly, a Search box group controlling the size, tint, refraction, etc. of the search box
 
 double-click a label to reset it
 Looks and Search Box settings stay consistent throughout all modes
