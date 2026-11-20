@@ -255,15 +255,47 @@ if (typeof window !== "undefined") {
       return;
     }
 
-    // 2. Tweaks menu or Search bar check (fireflies cannot see pointer over these UI elements)
-    const target = e.target;
-    const el = (target && target.closest) ? target : (document.elementFromPoint ? document.elementFromPoint(e.clientX, e.clientY) : null);
-    if (el && el.closest && el.closest(".tweaks, .tweaks-open, .composer")) {
+    // 2. Window focus check
+    if (typeof document !== "undefined" && typeof document.hasFocus === "function" && !document.hasFocus()) {
       deactivateMouse();
       return;
     }
 
-    // 3. Canvas coordinates
+    // 3. UI element check: Fireflies cannot see pointer over mode switching bar, tweaks menu, search bar, bookmarks, clock, etc.
+    const target = e.target;
+    const el = (target && target.closest) ? target : (document.elementFromPoint ? document.elementFromPoint(e.clientX, e.clientY) : null);
+    if (!el || (el.tagName && el.tagName.toLowerCase() !== "canvas")) {
+      deactivateMouse();
+      return;
+    }
+    if (el.closest && el.closest(".top-bar, .choices, .choice, .modes-tip, .bookmarks-bar, .bm-menu, .tweaks, .tweaks-open, .composer, .stage, .clock, .greeting, .masthead, button, input, textarea, a")) {
+      deactivateMouse();
+      return;
+    }
+
+    // 4. Spatial bounding-box buffer around the top mode switching bar (.top-bar)
+    const topBar = document.querySelector(".top-bar");
+    if (topBar) {
+      const tbRect = topBar.getBoundingClientRect();
+      if (e.clientX >= tbRect.left - 30 && e.clientX <= tbRect.right + 30 &&
+          e.clientY >= tbRect.top - 20 && e.clientY <= tbRect.bottom + 30) {
+        deactivateMouse();
+        return;
+      }
+    }
+
+    // 5. Spatial bounding-box buffer around tweaks menu when open
+    const tweaks = document.querySelector(".tweaks");
+    if (tweaks && !tweaks.hidden) {
+      const twRect = tweaks.getBoundingClientRect();
+      if (e.clientX >= twRect.left - 20 && e.clientX <= twRect.right + 20 &&
+          e.clientY >= twRect.top - 20 && e.clientY <= twRect.bottom + 20) {
+        deactivateMouse();
+        return;
+      }
+    }
+
+    // 6. Canvas coordinates
     const c = document.querySelector("canvas");
     if (!c) {
       deactivateMouse();
@@ -413,6 +445,9 @@ const G_firefly = {
 
       // Check mouse pointer attraction (phototaxis with fast dist2 check)
       let attracted = false;
+      if (typeof document !== "undefined" && typeof document.hasFocus === "function" && !document.hasFocus()) {
+        fireflyMouse.active = false;
+      }
       if (fireflyMouse.active && (performance.now() - fireflyMouse.lastMove < 4000)) {
         const mdx = fireflyMouse.x - t.x;
         const mdy = fireflyMouse.y - t.y;

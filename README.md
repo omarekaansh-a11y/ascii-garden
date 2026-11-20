@@ -14,7 +14,7 @@ Pick one from the row of animals in the top bar. Dark mode only, and each animal
 | Crane | red-crowned, after the paintings: each flies its own way along the course, flapping at its own pace and gliding now and then ; broad white wings with splayed fingers and black secondaries, a red crown, dark eyes on the nearer ones |
 | Crab | scuttle sideways in bursts, legs stepping, footprints in the sand; tap and they bolt away, claws up |
 | Sea Turtle | green sea turtles: rhythmic paddle strokes on broad front flippers and long graceful glides; rich amber-gold and olive mosaic shell (carapace) with distinct scute tiles and radiating patterns in herds|
-| Firefly | bioluminescent night swarm: dark bronze and olive chitin with fluttering micro-wings and luminous lanterns glowing inwarm golden-yellow and neon chartreuse-green; bring your cursor near them & they flock towards it as if a source of light!|
+| Firefly | bioluminescent night swarm: dark bronze and olive chitin with fluttering micro-wings and luminous lanterns glowing in warm golden-yellow and neon chartreuse-green; bring your cursor near them & they flock towards it as if a source of light!|
 
 Everywhere:
 
