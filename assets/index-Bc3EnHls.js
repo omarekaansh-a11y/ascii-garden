@@ -240,7 +240,7 @@ const G_turtle = {
     }
   }
 };
-const fireflyMouse = { x: -1000, y: -1000, active: false, lastMove: 0 };
+const fireflyMouse = { x: -1000, y: -1000, active: false };
 if (typeof window !== "undefined") {
   const deactivateMouse = () => {
     fireflyMouse.active = false;
@@ -249,8 +249,8 @@ if (typeof window !== "undefined") {
   };
 
   const handlePointer = (e) => {
-    // 1. Offscreen boundary check
-    if (e.clientX < 0 || e.clientY < 0 || e.clientX > window.innerWidth || e.clientY > window.innerHeight) {
+    // 1. Offscreen boundary check (immediately deactivate if touching or outside window border)
+    if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
       deactivateMouse();
       return;
     }
@@ -261,7 +261,8 @@ if (typeof window !== "undefined") {
       return;
     }
 
-    // 3. UI element check: Fireflies cannot see pointer over mode switching bar, tweaks menu, search bar, bookmarks, clock, etc.
+    // 3. UI element check: Fireflies cannot see pointer directly over mode switching bar buttons, tweaks menu, search bar, bookmarks, clock, etc.
+    // Zero buffer: only when cursor is directly over a UI element (not canvas). As soon as cursor is 1px off on canvas, they react.
     const target = e.target;
     const el = (target && target.closest) ? target : (document.elementFromPoint ? document.elementFromPoint(e.clientX, e.clientY) : null);
     if (!el || (el.tagName && el.tagName.toLowerCase() !== "canvas")) {
@@ -273,29 +274,7 @@ if (typeof window !== "undefined") {
       return;
     }
 
-    // 4. Spatial bounding-box buffer around the top mode switching bar (.top-bar)
-    const topBar = document.querySelector(".top-bar");
-    if (topBar) {
-      const tbRect = topBar.getBoundingClientRect();
-      if (e.clientX >= tbRect.left - 30 && e.clientX <= tbRect.right + 30 &&
-          e.clientY >= tbRect.top - 20 && e.clientY <= tbRect.bottom + 30) {
-        deactivateMouse();
-        return;
-      }
-    }
-
-    // 5. Spatial bounding-box buffer around tweaks menu when open
-    const tweaks = document.querySelector(".tweaks");
-    if (tweaks && !tweaks.hidden) {
-      const twRect = tweaks.getBoundingClientRect();
-      if (e.clientX >= twRect.left - 20 && e.clientX <= twRect.right + 20 &&
-          e.clientY >= twRect.top - 20 && e.clientY <= twRect.bottom + 20) {
-        deactivateMouse();
-        return;
-      }
-    }
-
-    // 6. Canvas coordinates
+    // 4. Canvas coordinates
     const c = document.querySelector("canvas");
     if (!c) {
       deactivateMouse();
@@ -313,17 +292,22 @@ if (typeof window !== "undefined") {
     fireflyMouse.x = mx;
     fireflyMouse.y = my;
     fireflyMouse.active = true;
-    fireflyMouse.lastMove = performance.now();
   };
 
   window.addEventListener("pointermove", handlePointer, { passive: true });
   window.addEventListener("pointerdown", handlePointer, { passive: true });
   window.addEventListener("pointerleave", deactivateMouse);
+  document.addEventListener("pointerleave", deactivateMouse);
+  window.addEventListener("mouseleave", deactivateMouse);
   document.addEventListener("mouseleave", deactivateMouse);
+  window.addEventListener("mouseout", (e) => {
+    if (!e.relatedTarget && !e.toElement) deactivateMouse();
+  });
   document.addEventListener("mouseout", (e) => {
     if (!e.relatedTarget && !e.toElement) deactivateMouse();
   });
   window.addEventListener("blur", deactivateMouse);
+  window.addEventListener("pointercancel", deactivateMouse);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) deactivateMouse();
   });
@@ -447,26 +431,35 @@ const G_firefly = {
       let attracted = false;
       if (typeof document !== "undefined" && typeof document.hasFocus === "function" && !document.hasFocus()) {
         fireflyMouse.active = false;
+        fireflyMouse.x = -1000;
+        fireflyMouse.y = -1000;
       }
-      if (fireflyMouse.active && (performance.now() - fireflyMouse.lastMove < 4000)) {
+      if (fireflyMouse.active) {
         const mdx = fireflyMouse.x - t.x;
         const mdy = fireflyMouse.y - t.y;
         const md2 = mdx * mdx + mdy * mdy;
-        if (md2 < 144400) { // within 380px
+        const attractRadius = 400;
+        const attractRadius2 = attractRadius * attractRadius; // 160000
+
+        if (md2 < attractRadius2) {
           attracted = true;
           const mdist = Math.sqrt(md2);
           const mAngle = Math.atan2(mdy, mdx);
-          if (mdist < 65) {
-            // Hover and softly orbit/sway around the cursor
-            const swirl = mAngle + Math.PI * 0.5 + Math.sin(now * 3 + t.id) * 0.4;
-            flock.steer(t, swirl, a * 0.35, 4.0);
-            o.x += Math.sin(now * 3.8 + t.id) * 22;
-            o.y += Math.cos(now * 3.2 + t.id * 1.4) * 22;
+
+          if (mdist < 75) {
+            // Locked around cursor: permanent lively buzzing and swirling orbit (inward pull prevents drift away)
+            const inwardPull = mdist > 45 ? 0.28 : -0.15;
+            const swirlDirection = (t.id % 2 === 0 ? 1 : -1);
+            const swirl = mAngle + Math.PI * 0.5 * swirlDirection + inwardPull;
+            flock.steer(t, swirl, a * 0.45, 4.5);
+            o.x += Math.sin(now * 3.6 + t.id) * 22;
+            o.y += Math.cos(now * 3.1 + t.id * 1.3) * 22;
           } else {
-            // Fly toward the mouse pointer
-            const pull = Math.min(1.0, (1 - mdist / 380) * 1.5);
-            const steerAngle = targetHeading * (1 - pull) + mAngle * pull;
-            flock.steer(t, steerAngle, a * (1 + pull * 0.4), 3.5);
+            // Strongly fly towards mouse pointer without leaking downstream
+            const pull = Math.min(1.0, 1.2 - mdist / attractRadius);
+            flock.steer(t, mAngle, a * (1.1 + pull * 0.5), 4.0);
+            o.x += (mdx / mdist) * 18 * pull;
+            o.y += (mdy / mdist) * 18 * pull;
           }
         }
       }
