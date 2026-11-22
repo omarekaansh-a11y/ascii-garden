@@ -113,22 +113,18 @@
   50% { opacity: 0.45; }
 }
 
-/* Odometer Slot - vertical ticker window (generous clearance, visible at rest) */
+/* Odometer Slot - vertical ticker window with generous clearance */
 .odo-slot {
   display: inline-flex;
   position: relative;
-  overflow: visible;
-  height: 1.35em;
-  line-height: 1.35em;
+  overflow: hidden;
+  height: 1.45em;
+  line-height: 1.45em;
   vertical-align: middle;
   align-items: center;
   justify-content: center;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
-}
-
-.odo-slot.odo-animating {
-  overflow: hidden;
 }
 
 /* Ghost digit for locked layout metrics */
@@ -166,9 +162,9 @@
   will-change: transform, opacity;
 }
 
-/* Incoming digit starts from above (-108%) */
+/* Incoming digit starts from above with subtle travel (-48%) */
 .odo-num.odo-incoming {
-  transform: translateY(-108%);
+  transform: translateY(-48%);
   opacity: 0;
   transition: none !important;
 }
@@ -177,8 +173,8 @@
 .odo-num.odo-current {
   transform: translateY(0);
   opacity: 1;
-  transition: transform 0.52s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.36s ease-out;
 }
 
 /* Stationary old digit before animation */
@@ -188,12 +184,12 @@
   transition: none;
 }
 
-/* Exiting old digit scrolls down out of view (+108%) */
+/* Exiting old digit scrolls down subtly (+48%) and dissolves inside slot */
 .odo-num.odo-exit {
-  transform: translateY(108%);
+  transform: translateY(48%);
   opacity: 0;
-  transition: transform 0.52s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.36s ease-out;
 }
 
 .clock-ampm {
@@ -213,17 +209,13 @@
 }
 
 .clock-ampm.odo-slot {
-  height: 1.35em;
-  line-height: 1.35em;
+  height: 1.45em;
+  line-height: 1.45em;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  overflow: visible !important;
-  padding-right: 0.04em !important;
-}
-
-.clock-ampm.odo-slot.odo-animating {
   overflow: hidden !important;
+  padding-right: 0.04em !important;
 }
 
 
@@ -740,35 +732,39 @@ body.voice-active .composer {
 }
 
 
-/* Search Recommendations Dropdown (Liquid Glassmorphic) */
+/* Search Recommendations Dropdown (Anchored directly under search box like Google) */
 .search-suggestions {
-  width: min(720px, calc(100vw - 32px));
-  box-sizing: border-box;
-  margin-top: 8px;
-  padding: 6px;
-  border-radius: 20px;
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 6px !important;
+  border-radius: 20px !important;
   pointer-events: auto !important;
-  max-height: 380px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  z-index: 25;
+  max-height: 380px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  z-index: 50 !important;
   --blur: 16px;
   --tint-a: 0.55;
   --tint-b: 0.42;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.25);
-  animation: suggFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  animation: suggFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 [data-theme=dark] .search-suggestions {
-  background-color: rgba(10, 12, 20, 0.82);
+  background-color: rgba(10, 12, 20, 0.88) !important;
 }
 
 [data-theme=light] .search-suggestions {
-  background-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 12px 36px rgba(28, 40, 96, 0.14), 0 2px 8px rgba(28, 40, 96, 0.08);
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  box-shadow: 0 12px 36px rgba(28, 40, 96, 0.14), 0 2px 8px rgba(28, 40, 96, 0.08) !important;
 }
 
 @keyframes suggFadeIn {
@@ -790,8 +786,8 @@ body.voice-active .composer {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
-  border-radius: 12px;
+  padding: 9px 14px;
+  border-radius: 14px;
   color: var(--text-soft);
   text-decoration: none;
   cursor: pointer;

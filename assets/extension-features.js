@@ -1202,10 +1202,7 @@
     }
 
     function updateSlot(slot, newChar, animate, force = false) {
-      if (!force && slot.dataset.char === newChar) {
-        slot.classList.remove('odo-animating');
-        return;
-      }
+      if (!force && slot.dataset.char === newChar) return;
 
       slot.dataset.char = newChar;
       const ghost = slot.querySelector('.odo-ghost');
@@ -1214,7 +1211,6 @@
       const current = slot.querySelector('.odo-num.odo-current');
 
       if (!animate || !current) {
-        slot.classList.remove('odo-animating');
         slot.querySelectorAll('.odo-num').forEach(el => el.remove());
         const num = document.createElement('span');
         num.className = 'odo-num odo-current';
@@ -1229,14 +1225,11 @@
       // Current moves to old
       current.className = 'odo-num odo-old';
 
-      // Incoming node created from above (-108%)
+      // Incoming node created from above (-48%)
       const incoming = document.createElement('span');
       incoming.className = 'odo-num odo-incoming';
       incoming.textContent = newChar;
       slot.appendChild(incoming);
-
-      // Add animating class for clipping only while rolling
-      slot.classList.add('odo-animating');
 
       // Force browser reflow to register initial state
       void incoming.offsetWidth;
@@ -1247,13 +1240,12 @@
         current.className = 'odo-num odo-old odo-exit';
       });
 
-      // Cleanup exited node after animation finishes and restore full overflow visibility
+      // Cleanup exited node after animation finishes
       setTimeout(() => {
         if (current.parentNode === slot) {
           current.remove();
         }
-        slot.classList.remove('odo-animating');
-      }, 550);
+      }, 460);
     }
 
     function syncGroup(containerEl, targetStr, animate, isFormatSwitch = false) {
