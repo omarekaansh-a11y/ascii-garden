@@ -941,14 +941,14 @@
     }
 
     function syncGroup(containerEl, targetStr, animate, isFormatSwitch = false) {
-      const slots = Array.from(containerEl.querySelectorAll(':scope > .odo-slot:not(.odo-removing)'));
+      const slots = Array.from(containerEl.querySelectorAll(':scope > .odo-slot'));
 
       if (slots.length === targetStr.length) {
         for (let i = 0; i < targetStr.length; i++) {
           if (isFormatSwitch) {
             setTimeout(() => {
               updateSlot(slots[i], targetStr[i], true, true);
-            }, i * 40);
+            }, i * 35);
           } else {
             updateSlot(slots[i], targetStr[i], animate);
           }
@@ -986,7 +986,7 @@
           if (isFormatSwitch) {
             setTimeout(() => {
               updateSlot(slots[i - 1], targetStr[i], true, true);
-            }, 40);
+            }, 35);
           } else {
             updateSlot(slots[i - 1], targetStr[i], animate);
           }
@@ -995,25 +995,21 @@
       }
 
       // Slot count decreased (e.g. 2 digits to 1 digit: "03" -> "3")
+      // Remove extra leading slot IMMEDIATELY to prevent mid-screen layout jumping
       if (slots.length > targetStr.length) {
-        const removingSlot = slots[0];
-        removingSlot.classList.add('odo-removing');
-        const removingNum = removingSlot.querySelector('.odo-num.odo-current');
-        if (removingNum) {
-          removingNum.className = 'odo-num odo-old odo-exit';
+        const excess = slots.length - targetStr.length;
+        for (let e = 0; e < excess; e++) {
+          slots[e].remove();
         }
 
-        setTimeout(() => {
-          removingSlot.remove();
-        }, 500);
-
         for (let i = 0; i < targetStr.length; i++) {
+          const remainingSlot = slots[excess + i];
           if (isFormatSwitch) {
             setTimeout(() => {
-              updateSlot(slots[i + 1], targetStr[i], true, true);
-            }, 40);
+              updateSlot(remainingSlot, targetStr[i], true, true);
+            }, 35);
           } else {
-            updateSlot(slots[i + 1], targetStr[i], animate);
+            updateSlot(remainingSlot, targetStr[i], animate);
           }
         }
         return;
@@ -1034,17 +1030,7 @@
       if (is24Hour) {
         // 24-hour mode - NO AM/PM
         hourStr = String(hours).padStart(2, '0');
-        if (isFormatSwitch) {
-          const currentAmpm = ampmEl.querySelector('.odo-num.odo-current');
-          if (currentAmpm) {
-            currentAmpm.className = 'odo-num odo-old odo-exit';
-          }
-          setTimeout(() => {
-            if (is24Hour) ampmEl.style.setProperty('display', 'none', 'important');
-          }, 450);
-        } else {
-          ampmEl.style.setProperty('display', 'none', 'important');
-        }
+        ampmEl.style.setProperty('display', 'none', 'important');
       } else {
         // 12-hour mode - Display AM and PM
         ampmStr = hours >= 12 ? 'PM' : 'AM';
@@ -1052,32 +1038,18 @@
         hourStr = String(hours);
         ampmEl.style.removeProperty('display');
 
-        if (isFormatSwitch) {
-          updateSlot(ampmEl, ampmStr, false);
-          const incomingAmpm = ampmEl.querySelector('.odo-num');
-          if (incomingAmpm) {
-            incomingAmpm.className = 'odo-num odo-incoming';
-          }
-          void ampmEl.offsetWidth;
-          requestAnimationFrame(() => {
-            if (incomingAmpm) {
-              incomingAmpm.className = 'odo-num odo-current';
-            }
-          });
+        if (ampmEl.children.length === 0) {
+          const ghost = document.createElement('span');
+          ghost.className = 'odo-ghost';
+          ghost.setAttribute('aria-hidden', 'true');
+          ghost.textContent = ampmStr;
+          const num = document.createElement('span');
+          num.className = 'odo-num odo-current';
+          num.textContent = ampmStr;
+          ampmEl.dataset.char = ampmStr;
+          ampmEl.append(ghost, num);
         } else {
-          if (ampmEl.children.length === 0) {
-            const ghost = document.createElement('span');
-            ghost.className = 'odo-ghost';
-            ghost.setAttribute('aria-hidden', 'true');
-            ghost.textContent = ampmStr;
-            const num = document.createElement('span');
-            num.className = 'odo-num odo-current';
-            num.textContent = ampmStr;
-            ampmEl.dataset.char = ampmStr;
-            ampmEl.append(ghost, num);
-          } else {
-            updateSlot(ampmEl, ampmStr, shouldAnimate);
-          }
+          updateSlot(ampmEl, ampmStr, shouldAnimate, isFormatSwitch);
         }
       }
 
@@ -1088,11 +1060,7 @@
       isFirstRender = false;
     }
 
-    function triggerSwitchAnimation() {
-      clockEl.classList.add('clock-switching');
-      setTimeout(() => {
-        clockEl.classList.remove('clock-switching');
-      }, 350);
+    function triggerSwitch() {
       updateTime(true, true);
     }
 
@@ -1107,7 +1075,7 @@
         }
       } catch (e) {}
       window.dispatchEvent(new CustomEvent('ascii-animals:clock-change', { detail: { format: val, userInitiated: true } }));
-      triggerSwitchAnimation();
+      triggerSwitch();
     });
 
     // Listen to changes from Tweaks settings
@@ -1121,7 +1089,7 @@
       const newFormat = is24Hour ? '24' : '12';
       const isSwitch = prevFormat !== newFormat;
       if (isSwitch) {
-        triggerSwitchAnimation();
+        triggerSwitch();
       } else {
         updateTime(true, false);
       }
