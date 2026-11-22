@@ -410,6 +410,9 @@
     const GLOBE_ICON_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
 
     function closeSuggestions() {
+      if (composer) {
+        composer.classList.remove('has-suggestions');
+      }
       if (suggestionsEl) {
         suggestionsEl.hidden = true;
         suggestionsEl.innerHTML = '';
@@ -514,6 +517,9 @@
       });
 
       suggestionsEl.hidden = false;
+      if (composer) {
+        composer.classList.add('has-suggestions');
+      }
     }
 
     function highlightSuggestion(idx, updateInput = true) {
@@ -1225,7 +1231,7 @@
       // Current moves to old
       current.className = 'odo-num odo-old';
 
-      // Incoming node created from above (-48%)
+      // Incoming node created directly above slit (-100%)
       const incoming = document.createElement('span');
       incoming.className = 'odo-num odo-incoming';
       incoming.textContent = newChar;
@@ -1234,18 +1240,18 @@
       // Force browser reflow to register initial state
       void incoming.offsetWidth;
 
-      // Animate on next frame: incoming slides down to 0, current exits downwards
+      // Animate on next frame in physical lockstep
       requestAnimationFrame(() => {
         incoming.className = 'odo-num odo-current';
         current.className = 'odo-num odo-old odo-exit';
       });
 
-      // Cleanup exited node after animation finishes
+      // Cleanup exited node after mechanical roll completes
       setTimeout(() => {
         if (current.parentNode === slot) {
           current.remove();
         }
-      }, 460);
+      }, 480);
     }
 
     function syncGroup(containerEl, targetStr, animate, isFormatSwitch = false) {
