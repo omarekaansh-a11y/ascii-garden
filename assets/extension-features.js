@@ -398,11 +398,278 @@
       updateClearButton();
     }
 
+    // --- Search Recommendations Dropdown (Google style in our visual aesthetic) ---
+    const suggestionsEl = document.getElementById('search-suggestions');
+    let selectedIndex = -1;
+    let currentSuggestions = [];
+    let fetchTimer = null;
+    let originalQuery = '';
+
+    const SEARCH_ICON_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    const HISTORY_ICON_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>';
+    const GLOBE_ICON_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+
+    function closeSuggestions() {
+      if (suggestionsEl) {
+        suggestionsEl.hidden = true;
+        suggestionsEl.innerHTML = '';
+      }
+      selectedIndex = -1;
+      currentSuggestions = [];
+    }
+
+    function renderSuggestions(items) {
+      if (!suggestionsEl) return;
+      if (!items || items.length === 0) {
+        closeSuggestions();
+        return;
+      }
+
+      currentSuggestions = items;
+      selectedIndex = -1;
+      suggestionsEl.innerHTML = '';
+
+      items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'sugg-item';
+        row.setAttribute('role', 'option');
+        row.dataset.index = idx;
+
+        // Icon container
+        const ico = document.createElement('span');
+        ico.className = 'sugg-ico';
+
+        if (item.type === 'history') {
+          // If favicon available from chrome extension API
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL && /^https?:/i.test(item.url || '')) {
+            const img = document.createElement('img');
+            img.src = chrome.runtime.getURL('/_favicon/?pageUrl=' + encodeURIComponent(item.url) + '&size=32');
+            img.alt = '';
+            img.addEventListener('error', () => {
+              ico.innerHTML = HISTORY_ICON_SVG;
+            }, { once: true });
+            ico.appendChild(img);
+          } else {
+            ico.innerHTML = HISTORY_ICON_SVG;
+          }
+        } else if (item.type === 'bookmark') {
+          ico.innerHTML = GLOBE_ICON_SVG;
+        } else {
+          ico.innerHTML = SEARCH_ICON_SVG;
+        }
+
+        // Title / text container
+        const textSpan = document.createElement('span');
+        textSpan.className = 'sugg-text';
+
+        // Highlight matching query
+        const queryLower = originalQuery.toLowerCase();
+        const itemText = item.text || item.title || '';
+        const lowerText = itemText.toLowerCase();
+        const matchIdx = lowerText.indexOf(queryLower);
+
+        if (matchIdx !== -1 && queryLower.length > 0) {
+          const before = itemText.substring(0, matchIdx);
+          const match = itemText.substring(matchIdx, matchIdx + queryLower.length);
+          const after = itemText.substring(matchIdx + queryLower.length);
+
+          textSpan.innerHTML = [
+            escapeHtml(before),
+            '<span class="sugg-match">' + escapeHtml(match) + '</span>',
+            escapeHtml(after)
+          ].join('');
+        } else {
+          textSpan.textContent = itemText;
+        }
+
+        row.appendChild(ico);
+        row.appendChild(textSpan);
+
+        // Subtitle or URL badge
+        if (item.url && item.type !== 'search') {
+          try {
+            const parsedUrl = new URL(item.url);
+            const hostSpan = document.createElement('span');
+            hostSpan.className = 'sugg-url';
+            hostSpan.textContent = parsedUrl.hostname.replace(/^www\./, '') + (parsedUrl.pathname !== '/' ? parsedUrl.pathname : '');
+            row.appendChild(hostSpan);
+          } catch (e) {}
+        } else if (item.badge) {
+          const badgeSpan = document.createElement('span');
+          badgeSpan.className = 'sugg-badge';
+          badgeSpan.textContent = item.badge;
+          row.appendChild(badgeSpan);
+        }
+
+        row.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          selectSuggestion(item);
+        });
+
+        row.addEventListener('mouseenter', () => {
+          highlightSuggestion(idx, false);
+        });
+
+        suggestionsEl.appendChild(row);
+      });
+
+      suggestionsEl.hidden = false;
+    }
+
+    function highlightSuggestion(idx, updateInput = true) {
+      if (!suggestionsEl) return;
+      const rows = suggestionsEl.querySelectorAll('.sugg-item');
+      rows.forEach(r => r.classList.remove('sugg-active'));
+
+      selectedIndex = idx;
+
+      if (idx >= 0 && idx < rows.length) {
+        const activeRow = rows[idx];
+        activeRow.classList.add('sugg-active');
+        activeRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+        if (updateInput && currentSuggestions[idx] && textarea) {
+          textarea.value = currentSuggestions[idx].text || currentSuggestions[idx].title;
+          updateClearButton();
+        }
+      } else if (idx === -1 && updateInput && textarea) {
+        textarea.value = originalQuery;
+        updateClearButton();
+      }
+    }
+
+    function selectSuggestion(item) {
+      closeSuggestions();
+      if (!item) return;
+
+      if (item.url && item.type !== 'search') {
+        location.href = item.url;
+      } else {
+        const text = item.text || item.title || textarea.value;
+        if (textarea) textarea.value = text;
+        doSubmit(text);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function queryHistoryAndBookmarks(q) {
+      const results = [];
+      const lowerQ = q.toLowerCase();
+
+      // 1. Chrome History Search
+      if (typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
+        try {
+          const histItems = await new Promise((resolve) => {
+            chrome.history.search({ text: q, maxResults: 6, startTime: 0 }, resolve);
+          });
+          if (histItems && histItems.length) {
+            histItems.forEach(h => {
+              if (h.url && !h.url.startsWith('chrome://') && !h.url.startsWith('chrome-extension://')) {
+                results.push({
+                  type: 'history',
+                  title: h.title || h.url,
+                  text: h.title || h.url,
+                  url: h.url
+                });
+              }
+            });
+          }
+        } catch (e) {}
+      }
+
+      // 2. Chrome Bookmarks Search
+      if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.search) {
+        try {
+          const bmItems = await new Promise((resolve) => {
+            chrome.bookmarks.search(q, resolve);
+          });
+          if (bmItems && bmItems.length) {
+            bmItems.forEach(b => {
+              if (b.url && !results.some(r => r.url === b.url)) {
+                results.push({
+                  type: 'bookmark',
+                  title: b.title || b.url,
+                  text: b.title || b.url,
+                  url: b.url,
+                  badge: 'Bookmark'
+                });
+              }
+            });
+          }
+        } catch (e) {}
+      }
+
+      return results;
+    }
+
+    async function queryGoogleSuggestions(q) {
+      try {
+        const endpoint = 'https://suggestqueries.google.com/complete/search?client=chrome&q=' + encodeURIComponent(q);
+        const resp = await fetch(endpoint);
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        if (data && Array.isArray(data[1])) {
+          return data[1].slice(0, 7).map(item => ({
+            type: 'query',
+            text: item,
+            title: item
+          }));
+        }
+      } catch (e) {}
+      return [];
+    }
+
+    async function fetchAllSuggestions(q) {
+      originalQuery = q;
+      const primaryItem = {
+        type: 'search',
+        text: q,
+        title: q + ' - Google Search',
+        badge: 'Google Search'
+      };
+
+      const [localMatches, googleMatches] = await Promise.all([
+        queryHistoryAndBookmarks(q),
+        queryGoogleSuggestions(q)
+      ]);
+
+      const combined = [primaryItem];
+      const seenTexts = new Set([q.toLowerCase()]);
+
+      // Add up to 3-4 local history/bookmark matches
+      localMatches.slice(0, 4).forEach(item => {
+        const key = (item.text || item.title || '').toLowerCase();
+        if (!seenTexts.has(key)) {
+          seenTexts.add(key);
+          combined.push(item);
+        }
+      });
+
+      // Add Google suggestions
+      googleMatches.forEach(item => {
+        const key = (item.text || item.title || '').toLowerCase();
+        if (!seenTexts.has(key)) {
+          seenTexts.add(key);
+          combined.push(item);
+        }
+      });
+
+      renderSuggestions(combined.slice(0, 9));
+    }
+
     if (composerClearBtn) {
       composerClearBtn.addEventListener('click', () => {
         if (textarea) textarea.value = '';
         attachedFiles = [];
         renderAttachments();
+        closeSuggestions();
         if (textarea) textarea.focus();
       });
     }
@@ -412,6 +679,47 @@
         updateClearButton();
         if (sendBtn && attachedFiles.length === 0) {
           sendBtn.disabled = !textarea.value.trim();
+        }
+
+        const q = textarea.value.trim();
+        if (!q) {
+          closeSuggestions();
+        } else {
+          clearTimeout(fetchTimer);
+          fetchTimer = setTimeout(() => {
+            fetchAllSuggestions(q);
+          }, 120);
+        }
+      });
+
+      textarea.addEventListener('keydown', (e) => {
+        if (!suggestionsEl || suggestionsEl.hidden || currentSuggestions.length === 0) {
+          return;
+        }
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const nextIdx = (selectedIndex + 1) >= currentSuggestions.length ? 0 : (selectedIndex + 1);
+          highlightSuggestion(nextIdx, true);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prevIdx = (selectedIndex - 1) < 0 ? (currentSuggestions.length - 1) : (selectedIndex - 1);
+          highlightSuggestion(prevIdx, true);
+        } else if (e.key === 'Enter') {
+          if (selectedIndex >= 0 && currentSuggestions[selectedIndex]) {
+            e.preventDefault();
+            selectSuggestion(currentSuggestions[selectedIndex]);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          closeSuggestions();
+        }
+      });
+
+      // Close suggestions on click outside
+      document.addEventListener('pointerdown', (e) => {
+        if (!composer.contains(e.target) && (!suggestionsEl || !suggestionsEl.contains(e.target))) {
+          closeSuggestions();
         }
       });
     }
@@ -894,7 +1202,10 @@
     }
 
     function updateSlot(slot, newChar, animate, force = false) {
-      if (!force && slot.dataset.char === newChar) return;
+      if (!force && slot.dataset.char === newChar) {
+        slot.classList.remove('odo-animating');
+        return;
+      }
 
       slot.dataset.char = newChar;
       const ghost = slot.querySelector('.odo-ghost');
@@ -903,6 +1214,7 @@
       const current = slot.querySelector('.odo-num.odo-current');
 
       if (!animate || !current) {
+        slot.classList.remove('odo-animating');
         slot.querySelectorAll('.odo-num').forEach(el => el.remove());
         const num = document.createElement('span');
         num.className = 'odo-num odo-current';
@@ -923,6 +1235,9 @@
       incoming.textContent = newChar;
       slot.appendChild(incoming);
 
+      // Add animating class for clipping only while rolling
+      slot.classList.add('odo-animating');
+
       // Force browser reflow to register initial state
       void incoming.offsetWidth;
 
@@ -932,11 +1247,12 @@
         current.className = 'odo-num odo-old odo-exit';
       });
 
-      // Cleanup exited node after animation finishes
+      // Cleanup exited node after animation finishes and restore full overflow visibility
       setTimeout(() => {
         if (current.parentNode === slot) {
           current.remove();
         }
+        slot.classList.remove('odo-animating');
       }, 550);
     }
 

@@ -45,8 +45,8 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 10px !important;
-  margin-bottom: 28px !important;
+  gap: 4px !important;
+  margin-bottom: 14px !important;
   pointer-events: auto !important;
 }
 
@@ -62,7 +62,7 @@
   cursor: pointer;
   user-select: none;
   border-radius: 16px;
-  padding: 4px 14px;
+  padding: 0 14px;
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 .clock:hover {
@@ -113,18 +113,22 @@
   50% { opacity: 0.45; }
 }
 
-/* Odometer Slot - vertical ticker window */
+/* Odometer Slot - vertical ticker window (generous clearance, visible at rest) */
 .odo-slot {
   display: inline-flex;
   position: relative;
-  overflow: hidden;
-  height: 1.25em;
-  line-height: 1.25em;
+  overflow: visible;
+  height: 1.35em;
+  line-height: 1.35em;
   vertical-align: middle;
   align-items: center;
   justify-content: center;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+}
+
+.odo-slot.odo-animating {
+  overflow: hidden;
 }
 
 /* Ghost digit for locked layout metrics */
@@ -209,13 +213,17 @@
 }
 
 .clock-ampm.odo-slot {
-  height: 1.25em;
-  line-height: 1.25em;
+  height: 1.35em;
+  line-height: 1.35em;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   padding-right: 0.04em !important;
+}
+
+.clock-ampm.odo-slot.odo-animating {
+  overflow: hidden !important;
 }
 
 
@@ -729,4 +737,141 @@ body.voice-active .composer {
     gap: 28px;
     padding: 30px 24px;
   }
+}
+
+
+/* Search Recommendations Dropdown (Liquid Glassmorphic) */
+.search-suggestions {
+  width: min(720px, calc(100vw - 32px));
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 20px;
+  pointer-events: auto !important;
+  max-height: 380px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 25;
+  --blur: 16px;
+  --tint-a: 0.55;
+  --tint-b: 0.42;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.25);
+  animation: suggFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme=dark] .search-suggestions {
+  background-color: rgba(10, 12, 20, 0.82);
+}
+
+[data-theme=light] .search-suggestions {
+  background-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 12px 36px rgba(28, 40, 96, 0.14), 0 2px 8px rgba(28, 40, 96, 0.08);
+}
+
+@keyframes suggFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.search-suggestions[hidden] {
+  display: none !important;
+}
+
+.sugg-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--text-soft);
+  text-decoration: none;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Geist', system-ui, sans-serif;
+  font-size: 13.5px;
+  transition: background 0.14s ease, color 0.14s ease;
+  user-select: none;
+}
+
+.sugg-item:hover,
+.sugg-item.sugg-active {
+  background: rgba(255, 255, 255, 0.085);
+  color: var(--text);
+}
+
+[data-theme=light] .sugg-item:hover,
+[data-theme=light] .sugg-item.sugg-active {
+  background: rgba(0, 0, 0, 0.055);
+}
+
+.sugg-ico {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.sugg-ico img {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+
+.sugg-ico svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sugg-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 450;
+  color: var(--text-soft);
+}
+
+.sugg-item:hover .sugg-text,
+.sugg-item.sugg-active .sugg-text {
+  color: var(--text);
+}
+
+.sugg-match {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sugg-url {
+  font-size: 11.5px;
+  color: var(--muted);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+
+.sugg-badge {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--chip);
+  border: 1px solid var(--chip-edge);
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
