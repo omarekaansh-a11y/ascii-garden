@@ -893,8 +893,8 @@
       return slot;
     }
 
-    function updateSlot(slot, newChar, animate) {
-      if (slot.dataset.char === newChar) return;
+    function updateSlot(slot, newChar, animate, force = false) {
+      if (!force && slot.dataset.char === newChar) return;
 
       slot.dataset.char = newChar;
       const ghost = slot.querySelector('.odo-ghost');
@@ -917,7 +917,7 @@
       // Current moves to old
       current.className = 'odo-num odo-old';
 
-      // Incoming node created from above (-105%)
+      // Incoming node created from above (-118%) with full clearance
       const incoming = document.createElement('span');
       incoming.className = 'odo-num odo-incoming';
       incoming.textContent = newChar;
@@ -940,17 +940,23 @@
       }, 600);
     }
 
-    function syncGroup(containerEl, targetStr, animate) {
-      const slots = Array.from(containerEl.querySelectorAll(':scope > .odo-slot'));
+    function syncGroup(containerEl, targetStr, animate, isFormatSwitch = false) {
+      const slots = Array.from(containerEl.querySelectorAll(':scope > .odo-slot:not(.odo-removing)'));
 
       if (slots.length === targetStr.length) {
         for (let i = 0; i < targetStr.length; i++) {
-          updateSlot(slots[i], targetStr[i], animate);
+          if (isFormatSwitch) {
+            setTimeout(() => {
+              updateSlot(slots[i], targetStr[i], true, true);
+            }, i * 45);
+          } else {
+            updateSlot(slots[i], targetStr[i], animate);
+          }
         }
         return;
       }
 
-      // If slot count changed (e.g. 9 -> 10, 12 -> 1, or initial render)
+      // If initial render or animation disabled
       if (!animate || slots.length === 0) {
         containerEl.innerHTML = '';
         for (let i = 0; i < targetStr.length; i++) {
@@ -959,21 +965,69 @@
         return;
       }
 
+      // Slot count increased (e.g. 1 digit to 2 digits: "2" -> "02")
       if (slots.length < targetStr.length) {
-        // e.g. 1 digit to 2 digits: insert leading slot
         const lead = createSlot(targetStr[0]);
+        lead.style.maxWidth = '0';
+        lead.style.opacity = '0';
+        lead.style.paddingLeft = '0';
+        lead.style.paddingRight = '0';
+
+        const leadNum = lead.querySelector('.odo-num');
+        if (leadNum) {
+          leadNum.className = 'odo-num odo-incoming';
+        }
+
         containerEl.insertBefore(lead, containerEl.firstChild);
+        void lead.offsetWidth;
+
+        requestAnimationFrame(() => {
+          lead.style.maxWidth = '1.5em';
+          lead.style.opacity = '1';
+          lead.style.paddingLeft = '';
+          lead.style.paddingRight = '';
+          if (leadNum) {
+            leadNum.className = 'odo-num odo-current';
+          }
+        });
+
         for (let i = 1; i < targetStr.length; i++) {
-          updateSlot(slots[i - 1], targetStr[i], animate);
+          if (isFormatSwitch) {
+            setTimeout(() => {
+              updateSlot(slots[i - 1], targetStr[i], true, true);
+            }, 45);
+          } else {
+            updateSlot(slots[i - 1], targetStr[i], animate);
+          }
         }
         return;
       }
 
+      // Slot count decreased (e.g. 2 digits to 1 digit: "02" -> "2")
       if (slots.length > targetStr.length) {
-        // e.g. 2 digits to 1 digit: remove leading slot
-        slots[0].remove();
+        const removingSlot = slots[0];
+        removingSlot.classList.add('odo-removing');
+        const removingNum = removingSlot.querySelector('.odo-num.odo-current');
+        if (removingNum) {
+          removingNum.className = 'odo-num odo-old odo-exit';
+        }
+        removingSlot.style.maxWidth = '0';
+        removingSlot.style.opacity = '0';
+        removingSlot.style.paddingLeft = '0';
+        removingSlot.style.paddingRight = '0';
+
+        setTimeout(() => {
+          removingSlot.remove();
+        }, 550);
+
         for (let i = 0; i < targetStr.length; i++) {
-          updateSlot(slots[i + 1], targetStr[i], animate);
+          if (isFormatSwitch) {
+            setTimeout(() => {
+              updateSlot(slots[i + 1], targetStr[i], true, true);
+            }, 45);
+          } else {
+            updateSlot(slots[i + 1], targetStr[i], animate);
+          }
         }
         return;
       }
@@ -981,7 +1035,7 @@
 
     let isFirstRender = true;
 
-    function updateTime(animate = true) {
+    function updateTime(animate = true, isFormatSwitch = false) {
       const now = new Date();
       let hours = now.getHours();
       const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -991,35 +1045,73 @@
       let ampmStr = '';
 
       if (is24Hour) {
-        // 24:00 mode - NO AM/PM
+        // 24-hour mode - NO AM/PM
         hourStr = String(hours).padStart(2, '0');
-        ampmEl.style.setProperty('display', 'none', 'important');
+        if (isFormatSwitch) {
+          const currentAmpm = ampmEl.querySelector('.odo-num.odo-current');
+          if (currentAmpm) {
+            currentAmpm.className = 'odo-num odo-old odo-exit';
+          }
+          ampmEl.classList.add('ampm-hidden');
+          setTimeout(() => {
+            if (is24Hour) ampmEl.style.display = 'none';
+          }, 450);
+        } else {
+          ampmEl.classList.add('ampm-hidden');
+          ampmEl.style.display = 'none';
+        }
       } else {
-        // 12:00 mode - Display AM and PM
+        // 12-hour mode - Display AM and PM
         ampmStr = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12 || 12;
         hourStr = String(hours);
-        ampmEl.style.removeProperty('display');
-        if (ampmEl.children.length === 0) {
-          const ghost = document.createElement('span');
-          ghost.className = 'odo-ghost';
-          ghost.setAttribute('aria-hidden', 'true');
-          ghost.textContent = ampmStr;
-          const num = document.createElement('span');
-          num.className = 'odo-num odo-current';
-          num.textContent = ampmStr;
-          ampmEl.dataset.char = ampmStr;
-          ampmEl.append(ghost, num);
+        ampmEl.style.display = '';
+
+        if (isFormatSwitch) {
+          ampmEl.classList.add('ampm-hidden');
+          updateSlot(ampmEl, ampmStr, false);
+          const incomingAmpm = ampmEl.querySelector('.odo-num');
+          if (incomingAmpm) {
+            incomingAmpm.className = 'odo-num odo-incoming';
+          }
+          void ampmEl.offsetWidth;
+          requestAnimationFrame(() => {
+            ampmEl.classList.remove('ampm-hidden');
+            if (incomingAmpm) {
+              incomingAmpm.className = 'odo-num odo-current';
+            }
+          });
         } else {
-          updateSlot(ampmEl, ampmStr, shouldAnimate);
+          ampmEl.classList.remove('ampm-hidden');
+          if (ampmEl.children.length === 0) {
+            const ghost = document.createElement('span');
+            ghost.className = 'odo-ghost';
+            ghost.setAttribute('aria-hidden', 'true');
+            ghost.textContent = ampmStr;
+            const num = document.createElement('span');
+            num.className = 'odo-num odo-current';
+            num.textContent = ampmStr;
+            ampmEl.dataset.char = ampmStr;
+            ampmEl.append(ghost, num);
+          } else {
+            updateSlot(ampmEl, ampmStr, shouldAnimate);
+          }
         }
       }
 
-      syncGroup(hEl, hourStr, shouldAnimate);
-      syncGroup(mEl, minutes, shouldAnimate);
+      syncGroup(hEl, hourStr, shouldAnimate, isFormatSwitch);
+      syncGroup(mEl, minutes, shouldAnimate, false);
 
       timeEl.setAttribute('aria-label', `${hourStr}:${minutes}${ampmStr ? ' ' + ampmStr : ''}`);
       isFirstRender = false;
+    }
+
+    function triggerSwitchAnimation() {
+      clockEl.classList.add('clock-switching');
+      setTimeout(() => {
+        clockEl.classList.remove('clock-switching');
+      }, 380);
+      updateTime(true, true);
     }
 
     // Toggle on clock click
@@ -1032,22 +1124,29 @@
           chrome.storage.local.set({ 'ascii-animals:clock-format': val });
         }
       } catch (e) {}
-      window.dispatchEvent(new CustomEvent('ascii-animals:clock-change', { detail: { format: val } }));
-      updateTime(true);
+      window.dispatchEvent(new CustomEvent('ascii-animals:clock-change', { detail: { format: val, userInitiated: true } }));
+      triggerSwitchAnimation();
     });
 
     // Listen to changes from Tweaks settings
     window.addEventListener('ascii-animals:clock-change', (e) => {
+      const prevFormat = is24Hour ? '24' : '12';
       if (e.detail && e.detail.format) {
         is24Hour = e.detail.format === '24';
       } else {
         syncFormat();
       }
-      updateTime(true);
+      const newFormat = is24Hour ? '24' : '12';
+      const isSwitch = prevFormat !== newFormat;
+      if (isSwitch) {
+        triggerSwitchAnimation();
+      } else {
+        updateTime(true, false);
+      }
     });
 
-    updateTime(false);
-    setInterval(() => updateTime(true), 1000);
+    updateTime(false, false);
+    setInterval(() => updateTime(true, false), 1000);
   }
 
   // Initialize all features once DOM is ready
