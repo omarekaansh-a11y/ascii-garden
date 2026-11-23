@@ -1259,13 +1259,7 @@
 
       if (slots.length === targetStr.length) {
         for (let i = 0; i < targetStr.length; i++) {
-          if (isFormatSwitch) {
-            setTimeout(() => {
-              updateSlot(slots[i], targetStr[i], true, true);
-            }, i * 35);
-          } else {
-            updateSlot(slots[i], targetStr[i], animate);
-          }
+          updateSlot(slots[i], targetStr[i], animate, isFormatSwitch);
         }
         return;
       }
@@ -1279,7 +1273,8 @@
         return;
       }
 
-      // Slot count increased (e.g. 1 digit to 2 digits: "3" -> "03")
+      // Slot count increased (e.g. 1 digit to 2 digits: "6" -> "06")
+      // Slide all digits down TOGETHER simultaneously
       if (slots.length < targetStr.length) {
         const lead = createSlot(targetStr[0]);
         const leadNum = lead.querySelector('.odo-num');
@@ -1297,19 +1292,13 @@
         });
 
         for (let i = 1; i < targetStr.length; i++) {
-          if (isFormatSwitch) {
-            setTimeout(() => {
-              updateSlot(slots[i - 1], targetStr[i], true, true);
-            }, 35);
-          } else {
-            updateSlot(slots[i - 1], targetStr[i], animate);
-          }
+          updateSlot(slots[i - 1], targetStr[i], animate, isFormatSwitch);
         }
         return;
       }
 
-      // Slot count decreased (e.g. 2 digits to 1 digit: "03" -> "3")
-      // Remove extra leading slot IMMEDIATELY to prevent mid-screen layout jumping
+      // Slot count decreased (e.g. 2 digits to 1 digit: "06" -> "6")
+      // Remove extra leading slot immediately and slide remaining digits down TOGETHER
       if (slots.length > targetStr.length) {
         const excess = slots.length - targetStr.length;
         for (let e = 0; e < excess; e++) {
@@ -1318,13 +1307,7 @@
 
         for (let i = 0; i < targetStr.length; i++) {
           const remainingSlot = slots[excess + i];
-          if (isFormatSwitch) {
-            setTimeout(() => {
-              updateSlot(remainingSlot, targetStr[i], true, true);
-            }, 35);
-          } else {
-            updateSlot(remainingSlot, targetStr[i], animate);
-          }
+          updateSlot(remainingSlot, targetStr[i], animate, isFormatSwitch);
         }
         return;
       }
