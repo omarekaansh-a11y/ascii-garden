@@ -102,15 +102,15 @@
 .clock-colon {
   display: inline-block;
   margin: 0 0.04em;
-  opacity: 0.92;
+  opacity: 0.95;
   vertical-align: 0.03em;
-  animation: clockPulse 2s ease-in-out infinite;
+  animation: clockPulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   line-height: 1;
 }
 
 @keyframes clockPulse {
-  0%, 100% { opacity: 0.92; }
-  50% { opacity: 0.45; }
+  0%, 100% { opacity: 0.95; }
+  50% { opacity: 0.15; }
 }
 
 /* Real Mechanical Odometer Drum - Pure Physical Scroll, Zero Opacity Fade */
