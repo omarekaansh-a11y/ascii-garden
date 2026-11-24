@@ -854,9 +854,17 @@
       } else {
         const tweaks = document.querySelector('.tweaks');
         const tweaksOpen = document.querySelector('.tweaks-open');
-        if (tweaks && !tweaks.hidden) {
-          tweaks.hidden = true;
-          if (tweaksOpen) tweaksOpen.hidden = false;
+        if (tweaks && !tweaks.hidden && !tweaks.classList.contains('is-closing')) {
+          tweaks.classList.remove('is-open');
+          tweaks.classList.add('is-closing');
+          if (tweaksOpen) {
+            tweaksOpen.hidden = false;
+            tweaksOpen.classList.remove('is-hidden');
+          }
+          setTimeout(() => {
+            tweaks.hidden = true;
+            tweaks.classList.remove('is-closing');
+          }, 200);
           try { localStorage.setItem('ascii-animals:tweaks-open', '0'); } catch(e) {}
         }
       }
@@ -1136,8 +1144,12 @@
     window.addEventListener('keydown', (e) => {
       const tag = (e.target.tagName || '').toLowerCase();
       if (e.key === 'Escape') {
-        const closeBtn = document.querySelector('.tweaks-close');
-        if (closeBtn && !closeBtn.closest('.tweaks')?.hidden) closeBtn.click();
+        if (typeof window.__closeTweaks === 'function') {
+          window.__closeTweaks();
+        } else {
+          const closeBtn = document.querySelector('.tweaks-close');
+          if (closeBtn && !closeBtn.closest('.tweaks')?.hidden) closeBtn.click();
+        }
         const menu = document.getElementById('bm-menu');
         if (menu && !menu.hidden) menu.hidden = true;
         return;
